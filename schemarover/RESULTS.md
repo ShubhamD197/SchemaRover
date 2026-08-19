@@ -123,6 +123,11 @@ expansion exists for (id 57, 75, 79: reaching `product` through
 `specialofferproduct`) are exactly the ones still failing. It means the
 expansion needs to be selective instead of blind. That is Phase A.
 
+> **Superseded by A1 below.** Selective expansion now exists: with
+> `max_degree=8` we get 100% full_recall at 48.7% of the schema, so FK
+> expansion is worth keeping after all. The tables above are the
+> pre-A1 state, kept because they are what motivated the fix.
+
 **4. The semantic stage is carrying the system on real schemas.** On
 Spider its contribution was arguable. On Sakila it takes full_recall from
 0% to 45%. On AdventureWorks from 23.8% to 91.2%. The honest caveat we had
@@ -148,3 +153,106 @@ first honest version of the headline claim this project has had.
   products do we sell?"
 - **No end-to-end accuracy yet.** Everything here measures retrieval only.
   full_recall is a ceiling, never an accuracy figure.
+
+---
+
+# Tuning results (tasks A1 and A4)
+
+Reproduce with:
+
+```bash
+python eval_harness.py adventureworks --sweep-degree   # A1
+python sweep_threshold.py adventureworks sakila --fk   # A4
+python sweep_hops.py sakila adventureworks             # hops x cap
+```
+
+## A1 — capping foreign-key expansion by hub degree
+
+Do not expand outward from a table with more than `max_degree` neighbours.
+
+| dataset | max_degree=off | max_degree=8 |
+|---|---|---|
+| Spider dev | 100.0% / 91.5% sent / 201 tok | 100.0% / 91.5% sent / 201 tok |
+| Sakila | 85.0% / 70.6% sent / 694 tok | 85.0% / 70.6% sent / 694 tok |
+| AdventureWorks | 100.0% / 57.8% sent / 3153 tok | **100.0% / 48.7% sent / 2684 tok** |
+
+Identical recall on all three, 9 points less schema and 15% fewer tokens on
+the large database, nothing made worse. **`max_degree=8` is now the default
+in `pipeline.py`.**
+
+The entire AdventureWorks gain comes from refusing to expand out of two
+tables: `product` (16 neighbours) and `salesorderheader` (9). Sakila's
+busiest table has only 4 neighbours, so no cap ≥4 changes anything there —
+16 tables is below the size where hubs start to hurt.
+
+Full AdventureWorks curve, for the trade-off:
+
+| cap | full_recall | schema sent | tokens |
+|---|---|---|---|
+| no FK | 91.2% | 29.9% | 1471 |
+| 1 | 93.8% | 33.5% | 1696 |
+| 2 | 96.2% | 38.0% | 2011 |
+| 6 | 97.5% | 46.5% | 2572 |
+| **8** | **100.0%** | **48.7%** | **2684** |
+| off | 100.0% | 57.8% | 3153 |
+
+## A4 — calibrating the semantic threshold
+
+Swept 0.20–0.60 on both real databases. **0.30 survives** — it is the knee,
+the cheapest threshold still reaching 100% on AdventureWorks. Our original
+hand-picked value was right; it is now defensible rather than arbitrary.
+
+One finding worth the paper: **without FK expansion at all, threshold 0.25
+reaches 98.8% at 39.3% of the schema (2003 tokens)** — cheaper than any FK
+configuration at comparable recall. Lowering the threshold partly
+*substitutes* for foreign-key traversal.
+
+We also checked the "never return zero" fallback, which we had flagged as a
+bug. It never fires below threshold 0.45 — results are identical with it on
+and off across 0.20–0.45. It is not a problem. We nearly fixed a non-issue.
+
+## Where the remaining failures are
+
+At threshold 0.30 with `max_degree=8`:
+
+- **AdventureWorks: 0 of 80 missed.**
+- **Sakila: 3 of 20 missed.** All three need tables **three hops** from the
+  seed, and raising `max_hops` to 2 does not reach them either:
+
+| question | missing | why |
+|---|---|---|
+| total revenue by movie category | `payment` | `film → inventory → rental → payment` |
+| total revenue by each actor's movies | `payment` | same chain |
+| movies rented by customers in Canada | `country` | `customer → address → city → country` |
+
+Two different root causes, and neither is a tuning problem:
+
+1. **`payment` is a semantic miss, not a graph problem.** For "total
+   revenue", `payment.amount` scores **0.176** — far below any usable
+   threshold. Meanwhile `film` matches at 0.42 for a spurious reason
+   (`film.rental_rate` looks like "revenue"). A general-purpose sentence
+   embedder does not know revenue lives in a column called `amount`. This
+   also disproves the example we had been using to justify column-level
+   embedding — see DECISIONS.md D8.
+
+2. **"Canada" is a value, not a schema word.** No schema-linking method can
+   match a data value against the `country` table. This is *value linking*,
+   a genuinely different problem (it is what the BIRD benchmark focuses on),
+   and it is out of scope for this system. Say so rather than counting it as
+   a tuning failure.
+
+## Current best configuration
+
+Threshold 0.30, `max_degree=8`, one hop:
+
+| dataset | full_recall | schema sent | tokens vs send-everything |
+|---|---|---|---|
+| Spider dev | 100.0% | 91.5% | 201 vs 223 (1.1×) |
+| Sakila | 85.0% | 70.6% | 694 vs 989 (1.4×) |
+| AdventureWorks | 100.0% | 48.7% | 2684 vs 5305 (**2.0×**) |
+
+The efficiency gain scales with schema size, which is the thesis. But 48.7%
+on 68 tables is still not a strong claim, and the honest reading is that
+this system is not yet efficient enough on large schemas. The next real
+lever is column-level pruning, not more retrieval tuning — on AdventureWorks
+`salesorderheader` alone has 26 columns.
