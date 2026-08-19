@@ -1,0 +1,2940 @@
+{
+ "tables": {
+  "businessentity": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid"
+   ],
+   "foreign_keys": []
+  },
+  "person": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "persontype",
+     "type": "char(2)"
+    },
+    {
+     "name": "namestyle",
+     "type": "\"NameStyle\""
+    },
+    {
+     "name": "title",
+     "type": "varchar(8)"
+    },
+    {
+     "name": "firstname",
+     "type": "\"Name\""
+    },
+    {
+     "name": "middlename",
+     "type": "\"Name\""
+    },
+    {
+     "name": "lastname",
+     "type": "\"Name\""
+    },
+    {
+     "name": "suffix",
+     "type": "varchar(10)"
+    },
+    {
+     "name": "emailpromotion",
+     "type": "INT"
+    },
+    {
+     "name": "additionalcontactinfo",
+     "type": "XML"
+    },
+    {
+     "name": "demographics",
+     "type": "XML"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "businessentity",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "stateprovince": {
+   "columns": [
+    {
+     "name": "stateprovinceid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "stateprovincecode",
+     "type": "char(3)"
+    },
+    {
+     "name": "countryregioncode",
+     "type": "varchar(3)"
+    },
+    {
+     "name": "isonlystateprovinceflag",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "territoryid",
+     "type": "INT"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "stateprovinceid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "countryregioncode",
+     "ref_table": "countryregion",
+     "ref_column": "countryregioncode"
+    },
+    {
+     "column": "territoryid",
+     "ref_table": "salesterritory",
+     "ref_column": "territoryid"
+    }
+   ]
+  },
+  "address": {
+   "columns": [
+    {
+     "name": "addressid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "addressline1",
+     "type": "varchar(60)"
+    },
+    {
+     "name": "addressline2",
+     "type": "varchar(60)"
+    },
+    {
+     "name": "city",
+     "type": "varchar(30)"
+    },
+    {
+     "name": "stateprovinceid",
+     "type": "INT"
+    },
+    {
+     "name": "postalcode",
+     "type": "varchar(15)"
+    },
+    {
+     "name": "spatiallocation",
+     "type": "bytea"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "addressid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "stateprovinceid",
+     "ref_table": "stateprovince",
+     "ref_column": "stateprovinceid"
+    }
+   ]
+  },
+  "addresstype": {
+   "columns": [
+    {
+     "name": "addresstypeid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "addresstypeid"
+   ],
+   "foreign_keys": []
+  },
+  "businessentityaddress": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "addressid",
+     "type": "INT"
+    },
+    {
+     "name": "addresstypeid",
+     "type": "INT"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "addressid",
+    "addresstypeid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "addressid",
+     "ref_table": "address",
+     "ref_column": "addressid"
+    },
+    {
+     "column": "addresstypeid",
+     "ref_table": "addresstype",
+     "ref_column": "addresstypeid"
+    },
+    {
+     "column": "businessentityid",
+     "ref_table": "businessentity",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "contacttype": {
+   "columns": [
+    {
+     "name": "contacttypeid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "contacttypeid"
+   ],
+   "foreign_keys": []
+  },
+  "businessentitycontact": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "personid",
+     "type": "INT"
+    },
+    {
+     "name": "contacttypeid",
+     "type": "INT"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "personid",
+    "contacttypeid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "personid",
+     "ref_table": "person",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "contacttypeid",
+     "ref_table": "contacttype",
+     "ref_column": "contacttypeid"
+    },
+    {
+     "column": "businessentityid",
+     "ref_table": "businessentity",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "emailaddress": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "emailaddressid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "emailaddress",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "emailaddressid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "person",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "password": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "passwordhash",
+     "type": "VARCHAR(128)"
+    },
+    {
+     "name": "passwordsalt",
+     "type": "VARCHAR(10)"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "person",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "phonenumbertype": {
+   "columns": [
+    {
+     "name": "phonenumbertypeid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "phonenumbertypeid"
+   ],
+   "foreign_keys": []
+  },
+  "personphone": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "phonenumber",
+     "type": "\"Phone\""
+    },
+    {
+     "name": "phonenumbertypeid",
+     "type": "INT"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "phonenumber",
+    "phonenumbertypeid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "person",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "phonenumbertypeid",
+     "ref_table": "phonenumbertype",
+     "ref_column": "phonenumbertypeid"
+    }
+   ]
+  },
+  "countryregion": {
+   "columns": [
+    {
+     "name": "countryregioncode",
+     "type": "varchar(3)"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "countryregioncode"
+   ],
+   "foreign_keys": []
+  },
+  "department": {
+   "columns": [
+    {
+     "name": "departmentid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "groupname",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "departmentid"
+   ],
+   "foreign_keys": []
+  },
+  "employee": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "nationalidnumber",
+     "type": "varchar(15)"
+    },
+    {
+     "name": "loginid",
+     "type": "varchar(256)"
+    },
+    {
+     "name": "org",
+     "type": "varchar"
+    },
+    {
+     "name": "organizationlevel",
+     "type": "INT"
+    },
+    {
+     "name": "jobtitle",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "birthdate",
+     "type": "DATE"
+    },
+    {
+     "name": "maritalstatus",
+     "type": "char(1)"
+    },
+    {
+     "name": "gender",
+     "type": "char(1)"
+    },
+    {
+     "name": "hiredate",
+     "type": "DATE"
+    },
+    {
+     "name": "salariedflag",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "vacationhours",
+     "type": "smallint"
+    },
+    {
+     "name": "sickleavehours",
+     "type": "smallint"
+    },
+    {
+     "name": "currentflag",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "person",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "employeedepartmenthistory": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "departmentid",
+     "type": "smallint"
+    },
+    {
+     "name": "shiftid",
+     "type": "smallint"
+    },
+    {
+     "name": "startdate",
+     "type": "DATE"
+    },
+    {
+     "name": "enddate",
+     "type": "DATE"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "startdate",
+    "departmentid",
+    "shiftid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "departmentid",
+     "ref_table": "department",
+     "ref_column": "departmentid"
+    },
+    {
+     "column": "businessentityid",
+     "ref_table": "employee",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "shiftid",
+     "ref_table": "shift",
+     "ref_column": "shiftid"
+    }
+   ]
+  },
+  "employeepayhistory": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "ratechangedate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "rate",
+     "type": "numeric"
+    },
+    {
+     "name": "payfrequency",
+     "type": "smallint"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "ratechangedate"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "employee",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "jobcandidate": {
+   "columns": [
+    {
+     "name": "jobcandidateid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "resume",
+     "type": "XML"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "jobcandidateid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "employee",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "shift": {
+   "columns": [
+    {
+     "name": "shiftid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "starttime",
+     "type": "time"
+    },
+    {
+     "name": "endtime",
+     "type": "time"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "shiftid"
+   ],
+   "foreign_keys": []
+  },
+  "billofmaterials": {
+   "columns": [
+    {
+     "name": "billofmaterialsid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "productassemblyid",
+     "type": "INT"
+    },
+    {
+     "name": "componentid",
+     "type": "INT"
+    },
+    {
+     "name": "startdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "enddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "unitmeasurecode",
+     "type": "char(3)"
+    },
+    {
+     "name": "bomlevel",
+     "type": "smallint"
+    },
+    {
+     "name": "perassemblyqty",
+     "type": "decimal(8"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "billofmaterialsid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productassemblyid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    },
+    {
+     "column": "componentid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    },
+    {
+     "column": "unitmeasurecode",
+     "ref_table": "unitmeasure",
+     "ref_column": "unitmeasurecode"
+    }
+   ]
+  },
+  "culture": {
+   "columns": [
+    {
+     "name": "cultureid",
+     "type": "char(6)"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "cultureid"
+   ],
+   "foreign_keys": []
+  },
+  "document": {
+   "columns": [
+    {
+     "name": "doc",
+     "type": "varchar"
+    },
+    {
+     "name": "documentlevel",
+     "type": "INTEGER"
+    },
+    {
+     "name": "title",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "owner",
+     "type": "INT"
+    },
+    {
+     "name": "folderflag",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "filename",
+     "type": "varchar(400)"
+    },
+    {
+     "name": "fileextension",
+     "type": "varchar(8)"
+    },
+    {
+     "name": "revision",
+     "type": "char(5)"
+    },
+    {
+     "name": "changenumber",
+     "type": "INT"
+    },
+    {
+     "name": "status",
+     "type": "smallint"
+    },
+    {
+     "name": "documentsummary",
+     "type": "text"
+    },
+    {
+     "name": "document",
+     "type": "bytea"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "documentnode"
+   ],
+   "foreign_keys": [
+    {
+     "column": "owner",
+     "ref_table": "employee",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "productcategory": {
+   "columns": [
+    {
+     "name": "productcategoryid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productcategoryid"
+   ],
+   "foreign_keys": []
+  },
+  "productsubcategory": {
+   "columns": [
+    {
+     "name": "productsubcategoryid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "productcategoryid",
+     "type": "INT"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productsubcategoryid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productcategoryid",
+     "ref_table": "productcategory",
+     "ref_column": "productcategoryid"
+    }
+   ]
+  },
+  "productmodel": {
+   "columns": [
+    {
+     "name": "productmodelid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "catalogdescription",
+     "type": "XML"
+    },
+    {
+     "name": "instructions",
+     "type": "XML"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productmodelid"
+   ],
+   "foreign_keys": []
+  },
+  "product": {
+   "columns": [
+    {
+     "name": "productid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "productnumber",
+     "type": "varchar(25)"
+    },
+    {
+     "name": "makeflag",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "finishedgoodsflag",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "color",
+     "type": "varchar(15)"
+    },
+    {
+     "name": "safetystocklevel",
+     "type": "smallint"
+    },
+    {
+     "name": "reorderpoint",
+     "type": "smallint"
+    },
+    {
+     "name": "standardcost",
+     "type": "numeric"
+    },
+    {
+     "name": "listprice",
+     "type": "numeric"
+    },
+    {
+     "name": "size",
+     "type": "varchar(5)"
+    },
+    {
+     "name": "sizeunitmeasurecode",
+     "type": "char(3)"
+    },
+    {
+     "name": "weightunitmeasurecode",
+     "type": "char(3)"
+    },
+    {
+     "name": "weight",
+     "type": "decimal(8"
+    },
+    {
+     "name": "daystomanufacture",
+     "type": "INT"
+    },
+    {
+     "name": "productline",
+     "type": "char(2)"
+    },
+    {
+     "name": "class",
+     "type": "char(2)"
+    },
+    {
+     "name": "style",
+     "type": "char(2)"
+    },
+    {
+     "name": "productsubcategoryid",
+     "type": "INT"
+    },
+    {
+     "name": "productmodelid",
+     "type": "INT"
+    },
+    {
+     "name": "sellstartdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "sellenddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "discontinueddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "sizeunitmeasurecode",
+     "ref_table": "unitmeasure",
+     "ref_column": "unitmeasurecode"
+    },
+    {
+     "column": "weightunitmeasurecode",
+     "ref_table": "unitmeasure",
+     "ref_column": "unitmeasurecode"
+    },
+    {
+     "column": "productmodelid",
+     "ref_table": "productmodel",
+     "ref_column": "productmodelid"
+    },
+    {
+     "column": "productsubcategoryid",
+     "ref_table": "productsubcategory",
+     "ref_column": "productsubcategoryid"
+    }
+   ]
+  },
+  "productcosthistory": {
+   "columns": [
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "startdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "enddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "standardcost",
+     "type": "numeric"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productid",
+    "startdate"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    }
+   ]
+  },
+  "productdescription": {
+   "columns": [
+    {
+     "name": "productdescriptionid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "description",
+     "type": "varchar(400)"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productdescriptionid"
+   ],
+   "foreign_keys": []
+  },
+  "productdocument": {
+   "columns": [
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "doc",
+     "type": "varchar"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productid",
+    "documentnode"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    },
+    {
+     "column": "documentnode",
+     "ref_table": "document",
+     "ref_column": "documentnode"
+    }
+   ]
+  },
+  "location": {
+   "columns": [
+    {
+     "name": "locationid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "costrate",
+     "type": "numeric"
+    },
+    {
+     "name": "availability",
+     "type": "decimal(8"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "locationid"
+   ],
+   "foreign_keys": []
+  },
+  "productinventory": {
+   "columns": [
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "locationid",
+     "type": "smallint"
+    },
+    {
+     "name": "shelf",
+     "type": "varchar(10)"
+    },
+    {
+     "name": "bin",
+     "type": "smallint"
+    },
+    {
+     "name": "quantity",
+     "type": "smallint"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productid",
+    "locationid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "locationid",
+     "ref_table": "location",
+     "ref_column": "locationid"
+    },
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    }
+   ]
+  },
+  "productlistpricehistory": {
+   "columns": [
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "startdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "enddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "listprice",
+     "type": "numeric"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productid",
+    "startdate"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    }
+   ]
+  },
+  "illustration": {
+   "columns": [
+    {
+     "name": "illustrationid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "diagram",
+     "type": "XML"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "illustrationid"
+   ],
+   "foreign_keys": []
+  },
+  "productmodelillustration": {
+   "columns": [
+    {
+     "name": "productmodelid",
+     "type": "INT"
+    },
+    {
+     "name": "illustrationid",
+     "type": "INT"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productmodelid",
+    "illustrationid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productmodelid",
+     "ref_table": "productmodel",
+     "ref_column": "productmodelid"
+    },
+    {
+     "column": "illustrationid",
+     "ref_table": "illustration",
+     "ref_column": "illustrationid"
+    }
+   ]
+  },
+  "productmodelproductdescriptionculture": {
+   "columns": [
+    {
+     "name": "productmodelid",
+     "type": "INT"
+    },
+    {
+     "name": "productdescriptionid",
+     "type": "INT"
+    },
+    {
+     "name": "cultureid",
+     "type": "char(6)"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productmodelid",
+    "productdescriptionid",
+    "cultureid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productdescriptionid",
+     "ref_table": "productdescription",
+     "ref_column": "productdescriptionid"
+    },
+    {
+     "column": "cultureid",
+     "ref_table": "culture",
+     "ref_column": "cultureid"
+    },
+    {
+     "column": "productmodelid",
+     "ref_table": "productmodel",
+     "ref_column": "productmodelid"
+    }
+   ]
+  },
+  "productphoto": {
+   "columns": [
+    {
+     "name": "productphotoid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "thumbnailphoto",
+     "type": "bytea"
+    },
+    {
+     "name": "thumbnailphotofilename",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "largephoto",
+     "type": "bytea"
+    },
+    {
+     "name": "largephotofilename",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productphotoid"
+   ],
+   "foreign_keys": []
+  },
+  "productproductphoto": {
+   "columns": [
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "productphotoid",
+     "type": "INT"
+    },
+    {
+     "name": "primary",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productid",
+    "productphotoid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    },
+    {
+     "column": "productphotoid",
+     "ref_table": "productphoto",
+     "ref_column": "productphotoid"
+    }
+   ]
+  },
+  "productreview": {
+   "columns": [
+    {
+     "name": "productreviewid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "reviewername",
+     "type": "\"Name\""
+    },
+    {
+     "name": "reviewdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "emailaddress",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "rating",
+     "type": "INT"
+    },
+    {
+     "name": "comments",
+     "type": "varchar(3850)"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productreviewid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    }
+   ]
+  },
+  "scrapreason": {
+   "columns": [
+    {
+     "name": "scrapreasonid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "scrapreasonid"
+   ],
+   "foreign_keys": []
+  },
+  "transactionhistory": {
+   "columns": [
+    {
+     "name": "transactionid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "referenceorderid",
+     "type": "INT"
+    },
+    {
+     "name": "referenceorderlineid",
+     "type": "INT"
+    },
+    {
+     "name": "transactiondate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "transactiontype",
+     "type": "char(1)"
+    },
+    {
+     "name": "quantity",
+     "type": "INT"
+    },
+    {
+     "name": "actualcost",
+     "type": "numeric"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "transactionid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    }
+   ]
+  },
+  "transactionhistoryarchive": {
+   "columns": [
+    {
+     "name": "transactionid",
+     "type": "INT"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "referenceorderid",
+     "type": "INT"
+    },
+    {
+     "name": "referenceorderlineid",
+     "type": "INT"
+    },
+    {
+     "name": "transactiondate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "transactiontype",
+     "type": "char(1)"
+    },
+    {
+     "name": "quantity",
+     "type": "INT"
+    },
+    {
+     "name": "actualcost",
+     "type": "numeric"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "transactionid"
+   ],
+   "foreign_keys": []
+  },
+  "unitmeasure": {
+   "columns": [
+    {
+     "name": "unitmeasurecode",
+     "type": "char(3)"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "unitmeasurecode"
+   ],
+   "foreign_keys": []
+  },
+  "workorder": {
+   "columns": [
+    {
+     "name": "workorderid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "orderqty",
+     "type": "INT"
+    },
+    {
+     "name": "stockedqty",
+     "type": "INT"
+    },
+    {
+     "name": "scrappedqty",
+     "type": "smallint"
+    },
+    {
+     "name": "startdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "enddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "duedate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "scrapreasonid",
+     "type": "smallint"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "workorderid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    },
+    {
+     "column": "scrapreasonid",
+     "ref_table": "scrapreason",
+     "ref_column": "scrapreasonid"
+    }
+   ]
+  },
+  "workorderrouting": {
+   "columns": [
+    {
+     "name": "workorderid",
+     "type": "INT"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "operationsequence",
+     "type": "smallint"
+    },
+    {
+     "name": "locationid",
+     "type": "smallint"
+    },
+    {
+     "name": "scheduledstartdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "scheduledenddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "actualstartdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "actualenddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "actualresourcehrs",
+     "type": "decimal(9"
+    },
+    {
+     "name": "plannedcost",
+     "type": "numeric"
+    },
+    {
+     "name": "actualcost",
+     "type": "numeric"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "workorderid",
+    "productid",
+    "operationsequence"
+   ],
+   "foreign_keys": [
+    {
+     "column": "locationid",
+     "ref_table": "location",
+     "ref_column": "locationid"
+    },
+    {
+     "column": "workorderid",
+     "ref_table": "workorder",
+     "ref_column": "workorderid"
+    }
+   ]
+  },
+  "productvendor": {
+   "columns": [
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "averageleadtime",
+     "type": "INT"
+    },
+    {
+     "name": "standardprice",
+     "type": "numeric"
+    },
+    {
+     "name": "lastreceiptcost",
+     "type": "numeric"
+    },
+    {
+     "name": "lastreceiptdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "minorderqty",
+     "type": "INT"
+    },
+    {
+     "name": "maxorderqty",
+     "type": "INT"
+    },
+    {
+     "name": "onorderqty",
+     "type": "INT"
+    },
+    {
+     "name": "unitmeasurecode",
+     "type": "char(3)"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "productid",
+    "businessentityid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    },
+    {
+     "column": "unitmeasurecode",
+     "ref_table": "unitmeasure",
+     "ref_column": "unitmeasurecode"
+    },
+    {
+     "column": "businessentityid",
+     "ref_table": "vendor",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "purchaseorderdetail": {
+   "columns": [
+    {
+     "name": "purchaseorderid",
+     "type": "INT"
+    },
+    {
+     "name": "purchaseorderdetailid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "duedate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "orderqty",
+     "type": "smallint"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "unitprice",
+     "type": "numeric"
+    },
+    {
+     "name": "linetotal",
+     "type": "numeric"
+    },
+    {
+     "name": "receivedqty",
+     "type": "decimal(8"
+    },
+    {
+     "name": "rejectedqty",
+     "type": "decimal(8"
+    },
+    {
+     "name": "stockedqty",
+     "type": "numeric"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "purchaseorderid",
+    "purchaseorderdetailid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    },
+    {
+     "column": "purchaseorderid",
+     "ref_table": "purchaseorderheader",
+     "ref_column": "purchaseorderid"
+    }
+   ]
+  },
+  "purchaseorderheader": {
+   "columns": [
+    {
+     "name": "purchaseorderid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "revisionnumber",
+     "type": "smallint"
+    },
+    {
+     "name": "status",
+     "type": "smallint"
+    },
+    {
+     "name": "employeeid",
+     "type": "INT"
+    },
+    {
+     "name": "vendorid",
+     "type": "INT"
+    },
+    {
+     "name": "shipmethodid",
+     "type": "INT"
+    },
+    {
+     "name": "orderdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "shipdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "subtotal",
+     "type": "numeric"
+    },
+    {
+     "name": "taxamt",
+     "type": "numeric"
+    },
+    {
+     "name": "freight",
+     "type": "numeric"
+    },
+    {
+     "name": "totaldue",
+     "type": "numeric"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "purchaseorderid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "employeeid",
+     "ref_table": "employee",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "vendorid",
+     "ref_table": "vendor",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "shipmethodid",
+     "ref_table": "shipmethod",
+     "ref_column": "shipmethodid"
+    }
+   ]
+  },
+  "shipmethod": {
+   "columns": [
+    {
+     "name": "shipmethodid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "shipbase",
+     "type": "numeric"
+    },
+    {
+     "name": "shiprate",
+     "type": "numeric"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "shipmethodid"
+   ],
+   "foreign_keys": []
+  },
+  "vendor": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "accountnumber",
+     "type": "\"AccountNumber\""
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "creditrating",
+     "type": "smallint"
+    },
+    {
+     "name": "preferredvendorstatus",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "activeflag",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "purchasingwebserviceurl",
+     "type": "varchar(1024)"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "businessentity",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "countryregioncurrency": {
+   "columns": [
+    {
+     "name": "countryregioncode",
+     "type": "varchar(3)"
+    },
+    {
+     "name": "currencycode",
+     "type": "char(3)"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "countryregioncode",
+    "currencycode"
+   ],
+   "foreign_keys": [
+    {
+     "column": "countryregioncode",
+     "ref_table": "countryregion",
+     "ref_column": "countryregioncode"
+    },
+    {
+     "column": "currencycode",
+     "ref_table": "currency",
+     "ref_column": "currencycode"
+    }
+   ]
+  },
+  "creditcard": {
+   "columns": [
+    {
+     "name": "creditcardid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "cardtype",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "cardnumber",
+     "type": "varchar(25)"
+    },
+    {
+     "name": "expmonth",
+     "type": "smallint"
+    },
+    {
+     "name": "expyear",
+     "type": "smallint"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "creditcardid"
+   ],
+   "foreign_keys": []
+  },
+  "currency": {
+   "columns": [
+    {
+     "name": "currencycode",
+     "type": "char(3)"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "currencycode"
+   ],
+   "foreign_keys": []
+  },
+  "currencyrate": {
+   "columns": [
+    {
+     "name": "currencyrateid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "currencyratedate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "fromcurrencycode",
+     "type": "char(3)"
+    },
+    {
+     "name": "tocurrencycode",
+     "type": "char(3)"
+    },
+    {
+     "name": "averagerate",
+     "type": "numeric"
+    },
+    {
+     "name": "endofdayrate",
+     "type": "numeric"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "currencyrateid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "fromcurrencycode",
+     "ref_table": "currency",
+     "ref_column": "currencycode"
+    },
+    {
+     "column": "tocurrencycode",
+     "ref_table": "currency",
+     "ref_column": "currencycode"
+    }
+   ]
+  },
+  "customer": {
+   "columns": [
+    {
+     "name": "customerid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "personid",
+     "type": "INT"
+    },
+    {
+     "name": "storeid",
+     "type": "INT"
+    },
+    {
+     "name": "territoryid",
+     "type": "INT"
+    },
+    {
+     "name": "accountnumber",
+     "type": "VARCHAR"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "customerid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "personid",
+     "ref_table": "person",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "storeid",
+     "ref_table": "store",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "territoryid",
+     "ref_table": "salesterritory",
+     "ref_column": "territoryid"
+    }
+   ]
+  },
+  "personcreditcard": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "creditcardid",
+     "type": "INT"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "creditcardid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "person",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "creditcardid",
+     "ref_table": "creditcard",
+     "ref_column": "creditcardid"
+    }
+   ]
+  },
+  "salesorderdetail": {
+   "columns": [
+    {
+     "name": "salesorderid",
+     "type": "INT"
+    },
+    {
+     "name": "salesorderdetailid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "carriertrackingnumber",
+     "type": "varchar(25)"
+    },
+    {
+     "name": "orderqty",
+     "type": "smallint"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "specialofferid",
+     "type": "INT"
+    },
+    {
+     "name": "unitprice",
+     "type": "numeric"
+    },
+    {
+     "name": "unitpricediscount",
+     "type": "numeric"
+    },
+    {
+     "name": "linetotal",
+     "type": "numeric"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "salesorderid",
+    "salesorderdetailid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "salesorderid",
+     "ref_table": "salesorderheader",
+     "ref_column": "salesorderid"
+    },
+    {
+     "column": "specialofferid",
+     "ref_table": "specialofferproduct",
+     "ref_column": "specialofferid"
+    },
+    {
+     "column": "productid",
+     "ref_table": "specialofferproduct",
+     "ref_column": "productid"
+    }
+   ]
+  },
+  "salesorderheader": {
+   "columns": [
+    {
+     "name": "salesorderid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "revisionnumber",
+     "type": "smallint"
+    },
+    {
+     "name": "orderdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "duedate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "shipdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "status",
+     "type": "smallint"
+    },
+    {
+     "name": "onlineorderflag",
+     "type": "\"Flag\""
+    },
+    {
+     "name": "salesordernumber",
+     "type": "VARCHAR(23)"
+    },
+    {
+     "name": "purchaseordernumber",
+     "type": "\"OrderNumber\""
+    },
+    {
+     "name": "accountnumber",
+     "type": "\"AccountNumber\""
+    },
+    {
+     "name": "customerid",
+     "type": "INT"
+    },
+    {
+     "name": "salespersonid",
+     "type": "INT"
+    },
+    {
+     "name": "territoryid",
+     "type": "INT"
+    },
+    {
+     "name": "billtoaddressid",
+     "type": "INT"
+    },
+    {
+     "name": "shiptoaddressid",
+     "type": "INT"
+    },
+    {
+     "name": "shipmethodid",
+     "type": "INT"
+    },
+    {
+     "name": "creditcardid",
+     "type": "INT"
+    },
+    {
+     "name": "creditcardapprovalcode",
+     "type": "varchar(15)"
+    },
+    {
+     "name": "currencyrateid",
+     "type": "INT"
+    },
+    {
+     "name": "subtotal",
+     "type": "numeric"
+    },
+    {
+     "name": "taxamt",
+     "type": "numeric"
+    },
+    {
+     "name": "freight",
+     "type": "numeric"
+    },
+    {
+     "name": "totaldue",
+     "type": "numeric"
+    },
+    {
+     "name": "comment",
+     "type": "varchar(128)"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "salesorderid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "billtoaddressid",
+     "ref_table": "address",
+     "ref_column": "addressid"
+    },
+    {
+     "column": "shiptoaddressid",
+     "ref_table": "address",
+     "ref_column": "addressid"
+    },
+    {
+     "column": "creditcardid",
+     "ref_table": "creditcard",
+     "ref_column": "creditcardid"
+    },
+    {
+     "column": "currencyrateid",
+     "ref_table": "currencyrate",
+     "ref_column": "currencyrateid"
+    },
+    {
+     "column": "customerid",
+     "ref_table": "customer",
+     "ref_column": "customerid"
+    },
+    {
+     "column": "salespersonid",
+     "ref_table": "salesperson",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "shipmethodid",
+     "ref_table": "shipmethod",
+     "ref_column": "shipmethodid"
+    },
+    {
+     "column": "territoryid",
+     "ref_table": "salesterritory",
+     "ref_column": "territoryid"
+    }
+   ]
+  },
+  "salesorderheadersalesreason": {
+   "columns": [
+    {
+     "name": "salesorderid",
+     "type": "INT"
+    },
+    {
+     "name": "salesreasonid",
+     "type": "INT"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "salesorderid",
+    "salesreasonid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "salesreasonid",
+     "ref_table": "salesreason",
+     "ref_column": "salesreasonid"
+    },
+    {
+     "column": "salesorderid",
+     "ref_table": "salesorderheader",
+     "ref_column": "salesorderid"
+    }
+   ]
+  },
+  "salesperson": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "territoryid",
+     "type": "INT"
+    },
+    {
+     "name": "salesquota",
+     "type": "numeric"
+    },
+    {
+     "name": "bonus",
+     "type": "numeric"
+    },
+    {
+     "name": "commissionpct",
+     "type": "numeric"
+    },
+    {
+     "name": "salesytd",
+     "type": "numeric"
+    },
+    {
+     "name": "saleslastyear",
+     "type": "numeric"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "employee",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "territoryid",
+     "ref_table": "salesterritory",
+     "ref_column": "territoryid"
+    }
+   ]
+  },
+  "salespersonquotahistory": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "quotadate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "salesquota",
+     "type": "numeric"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "quotadate"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "salesperson",
+     "ref_column": "businessentityid"
+    }
+   ]
+  },
+  "salesreason": {
+   "columns": [
+    {
+     "name": "salesreasonid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "reasontype",
+     "type": "\"Name\""
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "salesreasonid"
+   ],
+   "foreign_keys": []
+  },
+  "salestaxrate": {
+   "columns": [
+    {
+     "name": "salestaxrateid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "stateprovinceid",
+     "type": "INT"
+    },
+    {
+     "name": "taxtype",
+     "type": "smallint"
+    },
+    {
+     "name": "taxrate",
+     "type": "numeric"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "salestaxrateid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "stateprovinceid",
+     "ref_table": "stateprovince",
+     "ref_column": "stateprovinceid"
+    }
+   ]
+  },
+  "salesterritory": {
+   "columns": [
+    {
+     "name": "territoryid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "countryregioncode",
+     "type": "varchar(3)"
+    },
+    {
+     "name": "group",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "salesytd",
+     "type": "numeric"
+    },
+    {
+     "name": "saleslastyear",
+     "type": "numeric"
+    },
+    {
+     "name": "costytd",
+     "type": "numeric"
+    },
+    {
+     "name": "costlastyear",
+     "type": "numeric"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "territoryid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "countryregioncode",
+     "ref_table": "countryregion",
+     "ref_column": "countryregioncode"
+    }
+   ]
+  },
+  "salesterritoryhistory": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "territoryid",
+     "type": "INT"
+    },
+    {
+     "name": "startdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "enddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid",
+    "startdate",
+    "territoryid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "salesperson",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "territoryid",
+     "ref_table": "salesterritory",
+     "ref_column": "territoryid"
+    }
+   ]
+  },
+  "shoppingcartitem": {
+   "columns": [
+    {
+     "name": "shoppingcartitemid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "shoppingcartid",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "quantity",
+     "type": "INT"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "datecreated",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "shoppingcartitemid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    }
+   ]
+  },
+  "specialoffer": {
+   "columns": [
+    {
+     "name": "specialofferid",
+     "type": "SERIAL"
+    },
+    {
+     "name": "description",
+     "type": "varchar(255)"
+    },
+    {
+     "name": "discountpct",
+     "type": "numeric"
+    },
+    {
+     "name": "type",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "category",
+     "type": "varchar(50)"
+    },
+    {
+     "name": "startdate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "enddate",
+     "type": "TIMESTAMP"
+    },
+    {
+     "name": "minqty",
+     "type": "INT"
+    },
+    {
+     "name": "maxqty",
+     "type": "INT"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "specialofferid"
+   ],
+   "foreign_keys": []
+  },
+  "specialofferproduct": {
+   "columns": [
+    {
+     "name": "specialofferid",
+     "type": "INT"
+    },
+    {
+     "name": "productid",
+     "type": "INT"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "specialofferid",
+    "productid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "productid",
+     "ref_table": "product",
+     "ref_column": "productid"
+    },
+    {
+     "column": "specialofferid",
+     "ref_table": "specialoffer",
+     "ref_column": "specialofferid"
+    }
+   ]
+  },
+  "store": {
+   "columns": [
+    {
+     "name": "businessentityid",
+     "type": "INT"
+    },
+    {
+     "name": "name",
+     "type": "\"Name\""
+    },
+    {
+     "name": "salespersonid",
+     "type": "INT"
+    },
+    {
+     "name": "demographics",
+     "type": "XML"
+    },
+    {
+     "name": "rowguid",
+     "type": "uuid"
+    },
+    {
+     "name": "modifieddate",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "businessentityid"
+   ],
+   "foreign_keys": [
+    {
+     "column": "businessentityid",
+     "ref_table": "businessentity",
+     "ref_column": "businessentityid"
+    },
+    {
+     "column": "salespersonid",
+     "ref_table": "salesperson",
+     "ref_column": "businessentityid"
+    }
+   ]
+  }
+ }
+}

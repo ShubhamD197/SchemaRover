@@ -1,113 +1,212 @@
-# SchemaRover — PRD & Task List
+# SchemaRover — Plan
 
-> Training-free NL→SQL over ANY MySQL/PostgreSQL database, using
-> three-stage hybrid schema linking (lexical + semantic + FK traversal)
-> to retrieve only relevant tables before generation.
+> Training-free NL→SQL over any MySQL/PostgreSQL database. Three-stage
+> schema linking (lexical + semantic + FK traversal) retrieves only the
+> relevant tables before generation.
 
-## 1. Problem
+Companion files: **DECISIONS.md** (why we chose things) and **CLAUDE.md**
+(rules for coding sessions). Read DECISIONS.md before changing anything
+that has a "Firm" status.
 
-LLMs write good SQL when they see a small schema. Real databases have
-100+ tables. Dumping the whole schema causes hallucinated joins/columns,
-huge prompts, and high cost. Fine-tuning per database is impractical.
+---
 
-## 2. Solution
+## 1. The problem
 
-Retrieve-then-generate. Introspect the DB automatically, retrieve the
-relevant table subset per question, generate SQL from that subset only.
-No training, no per-DB configuration.
+Language models write good SQL when they can see a small schema. Real
+databases are not small. Sending the whole schema makes the prompt
+expensive and makes the model invent columns and joins that do not exist.
+Training a model per database is not realistic.
 
-## 3. Core claim for the paper
+## 2. The idea
 
-**Not** "we beat state-of-the-art accuracy." That fight is lost to
-fine-tuned models. The defensible claim is:
+Retrieve, then generate. Work out which few tables the question is about,
+and show the model only those.
 
-> A training-free, zero-config system whose hybrid schema linking keeps
-> retrieval quality high as schema size grows, where full-schema
-> injection degrades.
+## 3. The claim we are actually making
 
-Evidence = schema-linking metrics on Spider + end-to-end execution
-accuracy vs a full-schema-injection baseline, **plotted against table
-count**. The scaling curve IS the paper.
+**Not** "we beat state-of-the-art accuracy" — fine-tuned models win that
+fight. Our claim:
 
-## 4. Success metrics
+> A training-free, zero-configuration system that keeps retrieval quality
+> high **while sending a small and shrinking fraction of the schema** as
+> the database grows, where full-schema injection degrades.
+
+The evidence is a curve: retrieval quality and prompt size plotted against
+number of tables. **That curve is the paper.**
+
+## 4. What we found that changed the plan
+
+Our best configuration scored **100% full_recall on Spider dev** — while
+sending **3.98 of 4.52 tables — 91.5% of the schema.** That is not a
+result. On a 4-table database, "retrieving" 4 tables is not retrieval.
+
+Three quarters of Spider's questions run on databases with 5 tables or
+fewer, and only 1 of its 166 dev databases has more than 20. **Spider
+cannot show our claim, because there is nothing large in it.**
+
+So we added real large schemas — and the picture changed completely:
+
+| | Spider (4.5 tables) | Sakila (16) | AdventureWorks (68) |
+|---|---|---|---|
+| full config, full_recall | 100% | 85.0% | 100% |
+| full config, **schema sent** | **91.5%** | **70.6%** | **57.8%** |
+| tables added by one FK hop | +1.3 | +3.3 | **+15.3** |
+
+Best current configuration on the large database is **lexical + semantic
+with no FK expansion**: 91.2% full_recall while sending 29.9% of the schema
+(1471 tokens instead of 5305 — a 3.6× reduction). Adding blind FK expansion
+buys the last 8.8 points of recall and **doubles the prompt**.
+
+Full numbers in **RESULTS.md**.
+
+One foreign-key hop adds about one table on Spider and **fifteen** on
+AdventureWorks, because real databases have hub tables and toy ones do not.
+This is not a small regression — it is the trade-off from D7 inverting, and
+it is the most interesting thing we have found. See DECISIONS.md D6 and D7.
+
+**Reframing:** Spider is now our *control* — the regime where filtering is
+unnecessary and every method ties. The contribution is what happens outside
+it.
+
+## 5. Success metrics
 
 | Metric | Target | Why |
 |---|---|---|
-| full_recall (all gold tables retrieved) | ≥ 93% | ceiling on end-to-end accuracy |
-| avg tables in prompt | < 4 | prompt cost / hallucination risk |
-| execution accuracy vs baseline | beat it on large schemas | the paper's headline |
+| full_recall | ≥ 90% **on AdventureWorks** | ceiling on end-to-end accuracy |
+| schema sent | < 20% on 68-table DB | this is the efficiency claim |
+| prompt tokens | beat full-schema baseline by 3×+ | what efficiency costs in money |
+| execution accuracy | beat full-schema baseline on large schemas | the headline |
 | zero-config connect | any MySQL/PG URL | the practical claim |
 
-## 5. Non-goals
+**Rule: full_recall is never reported without schema-sent next to it.**
+A "send everything" baseline is printed in every run for exactly this
+reason. See DECISIONS.md D6.
 
-- Beating RESDSQL/fine-tuned SOTA on raw Spider accuracy.
+## 6. Non-goals
+
+- Beating fine-tuned models on raw Spider accuracy.
 - Write operations. **Read-only, always.**
-- Multi-turn conversation (future work).
+- Multi-turn conversation.
 - NoSQL.
 
 ---
 
-# Task list (phased, Claude Code friendly)
+# What we evaluate on
 
-Each task = one Claude Code session. Keep sessions narrow.
+| Dataset | Tables | Questions | Role | Status |
+|---|---|---|---|---|
+| Spider dev | 2–26 (avg 4.5) | 1034 | small-schema control, comparable to other papers | ready |
+| Sakila | 16 | 20 | real schema, the demo | ready, needs more questions |
+| AdventureWorks | 68 | 80 | **where the claim lives** | ready |
+| Distractor-augmented Spider | 4 → 100+ | 1034 × k | the scaling curve | to build |
 
-## PHASE 1 — Demo path (DO THIS FIRST)
-Goal: something reviewable end-to-end.
-
-- [x] **T1.1** Fix lexical matcher (symmetric stemming). *Done — measured
-      full_recall 57%→74% standalone, 76%→93% with FK.*
-- [ ] **T1.2** `connection.py` — Connection Manager. Accept a DB URL at
-      runtime, validate, return engine, friendly errors. No hardcoded
-      `.env` DB.
-- [ ] **T1.3** `pipeline.py` — wire introspect → lexical ∪ semantic → FK
-      → prompt → LLM → validate → execute. One function, one call.
-- [ ] **T1.4** `main.py` — FastAPI: `POST /connect`, `GET /schema`,
-      `POST /query`, `GET /history`.
-- [ ] **T1.5** Frontend — single page: connection form, question box,
-      **matched tables**, **generated SQL**, results table, history.
-      Showing the retrieved tables is the demo's whole point.
-- [ ] **T1.6** `validator.py` — read-only enforcement.
-
-## PHASE 2 — Correctness
-- [ ] **T2.1** Make FK expansion **conditional** (biggest precision leak:
-      181 dev queries hurt by blind 1-hop expansion on single-table gold).
-- [ ] **T2.2** Calibrate semantic threshold by sweeping 0.25–0.50 on
-      Spider; pick from the curve, not by guess. Current 0.30 is arbitrary.
-- [ ] **T2.3** Gate/remove the "never return zero" fallback — it injects a
-      confidently wrong table on unrelated questions.
-- [ ] **T2.4** Cache `SchemaEmbedder` per database (never re-embed per query).
-- [ ] **T2.5** Column-level pruning — send relevant columns, not whole tables.
-
-## PHASE 3 — Evaluation (the paper)
-- [ ] **T3.1** Run harness with semantic plugged in. Honest question:
-      does semantic raise full_recall above lexical+FK alone? Be ready
-      for "no."
-- [ ] **T3.2** Baseline: full-schema injection, same LLM, same prompt.
-- [ ] **T3.3** Execution accuracy on Spider dev (needs the DB zip locally).
-- [ ] **T3.4** **Scaling plot**: accuracy & prompt tokens vs #tables.
-      This is the figure the paper lives or dies on.
-- [ ] **T3.5** Ablation: lexical only / +semantic / +FK / full.
-
-## PHASE 4 — Paper & polish
-- [ ] **T4.1** Rename everything QueryBridge → SchemaRover (the 14-paper
-      doc still says QueryBridge).
-- [ ] **T4.2** Rotate the leaked DB password; ensure `.env` is gitignored.
-- [ ] **T4.3** Write paper: Related Work from the 14-paper doc; cite G-SQL
-      (FK constraints → executable SQL), View-SQL + HSRNet (multi-table
-      joins are THE bottleneck), Sketch Filling + Shakespeare-SQL (RAG).
-- [ ] **T4.4** Error taxonomy of failure cases.
+Schemas are read from `.sql` files by `ddl_adapter.py` — no database server
+needed to measure retrieval. See DECISIONS.md D11.
 
 ---
 
-# How to use Claude Code effectively
+# Task list
 
-1. **Put this file in the repo root.** Claude Code reads it for context.
-   Start sessions with: "Read PLAN.md. Implement T1.2 only."
-2. **One task per session.** Broad asks produce sprawling, wrong code.
-3. **Make it prove things.** "Run the harness and show me the numbers
-   before and after" — don't accept "this should improve it."
-4. **Add a `CLAUDE.md`** with project conventions so you don't re-explain
-   the stack every session.
-5. **Commit after each task.** Easy rollback when a change makes metrics
-   worse — and some will.
-6. **Never let it tune against numbers it didn't run.** Measured > plausible.
+One task per coding session. Do not run ahead — the order exists because
+later steps are meaningless without earlier ones.
+
+## DONE
+
+- [x] **T1.1** Fix lexical matcher (symmetric stemming).
+- [x] **T1.2** `connection.py` — runtime connection manager, no hardcoded DB.
+- [x] **T1.3** `pipeline.py` — introspect → link → prompt → LLM → validate → execute.
+- [x] **T1.4** `main.py` — FastAPI: connect / schema / query / history.
+- [x] **T1.5** Frontend — single page showing retrieved tables and SQL.
+- [x] **T1.6** `validator.py` — read-only enforcement.
+- [x] **T2.4** Cache `SchemaEmbedder` once per database.
+- [x] **T3.0** Rewire the harness to measure the **shipped** path, with all
+      variants named. *(It was importing the old buggy matcher, so none of
+      our published numbers could be reproduced from the repo.)*
+- [x] **T3.1** Add compression ratio + prompt tokens + "send everything"
+      baseline to the harness.
+- [x] **T3.2** `ddl_adapter.py` — read any `.sql` schema into our dict shape.
+- [x] **T3.3** AdventureWorks (68 tables) loaded, 80 questions written.
+- [x] **T3.4** Measure all variants on Spider / Sakila / AdventureWorks.
+
+## PHASE A — fix what the big-schema numbers exposed
+
+- [ ] **A1** Make FK expansion **degree-aware**. Do not expand into hub
+      tables above some connection count. Sweep the cut-off; plot
+      full_recall vs schema-sent on AdventureWorks. *This replaces the old
+      "conditional FK" task, which was measured on Spider and rejected —
+      see DECISIONS.md D7. The rejection was correct for Spider and is
+      wrong for AdventureWorks.*
+- [ ] **A2** Try **connective expansion**: only pull in a table if it sits
+      on a path *between two already-matched tables*, instead of radiating
+      outward from every match. Compare against A1.
+- [ ] **A3** Move the "never return zero" fallback out of
+      `Semantic_matcher.match()`. It currently injects a table into every
+      single question before FK expansion runs. See DECISIONS.md O2.
+- [ ] **A4** Calibrate the semantic threshold (currently 0.30, chosen by
+      hand). Sweep 0.25–0.50 **on AdventureWorks and Sakila**, not Spider.
+      Pick from the curve. See DECISIONS.md O1.
+
+**Gate for Phase A:** full_recall ≥ 90% on AdventureWorks while sending
+under 20% of the schema. If no configuration reaches it, that is the
+finding — report it.
+
+## PHASE B — the scaling curve (the paper's main figure)
+
+- [ ] **B1** Build distractor augmentation: take each Spider question's own
+      schema and merge in *k* other Spider schemas as noise, k ∈ {0,1,2,4,8,16}.
+      Gold tables never change, so this costs **zero new labelling**.
+- [ ] **B2** Run every variant across the sweep. **Plot full_recall and
+      schema-sent against table count.** This is Figure 1.
+- [ ] **B3** Confirm the AdventureWorks finding on the curve: at what table
+      count does blind FK expansion stop paying for itself?
+
+## PHASE C — end to end
+
+- [ ] **C1** Load Sakila into MySQL (data, not just schema) and measure
+      **execution accuracy**: does the SQL return the right answer?
+- [ ] **C2** Full-schema-injection baseline, same model, same prompt
+      template, temperature 0.
+- [ ] **C3** Extend Sakila to 50+ questions. Write them **before** running
+      the system on them, then freeze. 20 questions means each one is worth
+      5 percentage points — too coarse to conclude anything.
+- [ ] **C4** Error taxonomy: bucket every failure by cause.
+
+## PHASE D — paper and polish
+
+- [ ] **D1** Column-level pruning, **only if** Phase B says table-level
+      retrieval has hit its ceiling. This is the one item that may need a
+      change to the architecture diagram, so it needs evidence first.
+      See DECISIONS.md O3.
+- [ ] **D2** Rotate the database password in `.env` and confirm it is
+      ignored by git.
+- [ ] **D3** Write the paper. Motivation = section 4 above. Related work
+      from the 14-paper doc; cite G-SQL (FK constraints → executable SQL),
+      View-SQL + HSRNet (multi-table joins are the bottleneck),
+      Sketch Filling + Shakespeare-SQL (RAG).
+- [ ] **D4** Rename any remaining QueryBridge references to SchemaRover.
+
+---
+
+# How to run things
+
+```bash
+cd CodeBase/schemarover/backend
+
+python ddl_adapter.py --check                  # parser self-test
+python eval_harness.py spider                  # small-schema control
+python eval_harness.py sakila                  # 16 tables
+python eval_harness.py adventureworks          # 68 tables — the real test
+python eval_harness.py all --semantic          # everything, slower
+```
+
+# Working rules
+
+1. **One task per session.** Broad requests produce sprawling, wrong code.
+2. **Numbers or it did not happen.** No claim that a change helped without
+   harness output from before and after.
+3. **Never report full_recall alone.** Always with schema-sent beside it.
+4. **A result that contradicts the thesis goes in the paper as a finding,**
+   not tuned away. Our two best pieces of evidence so far are both cases
+   where we measured our own idea and it was wrong.
+5. **Record the reasoning in DECISIONS.md,** not just the code change.
+6. Commit after each task, so a bad change is easy to undo.

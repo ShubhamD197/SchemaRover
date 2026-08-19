@@ -1,0 +1,615 @@
+{
+ "tables": {
+  "actor": {
+   "columns": [
+    {
+     "name": "actor_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "first_name",
+     "type": "VARCHAR(45)"
+    },
+    {
+     "name": "last_name",
+     "type": "VARCHAR(45)"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "actor_id"
+   ],
+   "foreign_keys": []
+  },
+  "address": {
+   "columns": [
+    {
+     "name": "address_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "address",
+     "type": "VARCHAR(50)"
+    },
+    {
+     "name": "address2",
+     "type": "VARCHAR(50)"
+    },
+    {
+     "name": "district",
+     "type": "VARCHAR(20)"
+    },
+    {
+     "name": "city_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "postal_code",
+     "type": "VARCHAR(10)"
+    },
+    {
+     "name": "phone",
+     "type": "VARCHAR(20)"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "address_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "city_id",
+     "ref_table": "city",
+     "ref_column": "city_id"
+    }
+   ]
+  },
+  "category": {
+   "columns": [
+    {
+     "name": "category_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "name",
+     "type": "VARCHAR(25)"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "category_id"
+   ],
+   "foreign_keys": []
+  },
+  "city": {
+   "columns": [
+    {
+     "name": "city_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "city",
+     "type": "VARCHAR(50)"
+    },
+    {
+     "name": "country_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "city_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "country_id",
+     "ref_table": "country",
+     "ref_column": "country_id"
+    }
+   ]
+  },
+  "country": {
+   "columns": [
+    {
+     "name": "country_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "country",
+     "type": "VARCHAR(50)"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "country_id"
+   ],
+   "foreign_keys": []
+  },
+  "customer": {
+   "columns": [
+    {
+     "name": "customer_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "store_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "first_name",
+     "type": "VARCHAR(45)"
+    },
+    {
+     "name": "last_name",
+     "type": "VARCHAR(45)"
+    },
+    {
+     "name": "email",
+     "type": "VARCHAR(50)"
+    },
+    {
+     "name": "address_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "active",
+     "type": "BOOLEAN"
+    },
+    {
+     "name": "create_date",
+     "type": "DATETIME"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "customer_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "address_id",
+     "ref_table": "address",
+     "ref_column": "address_id"
+    },
+    {
+     "column": "store_id",
+     "ref_table": "store",
+     "ref_column": "store_id"
+    }
+   ]
+  },
+  "film": {
+   "columns": [
+    {
+     "name": "film_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "title",
+     "type": "VARCHAR(128)"
+    },
+    {
+     "name": "description",
+     "type": "TEXT"
+    },
+    {
+     "name": "release_year",
+     "type": "YEAR"
+    },
+    {
+     "name": "language_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "original_language_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "rental_duration",
+     "type": "TINYINT"
+    },
+    {
+     "name": "rental_rate",
+     "type": "DECIMAL(4,2)"
+    },
+    {
+     "name": "length",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "replacement_cost",
+     "type": "DECIMAL(5,2)"
+    },
+    {
+     "name": "rating",
+     "type": "ENUM('G','PG','PG-13','R','NC-17')"
+    },
+    {
+     "name": "special_features",
+     "type": "SET('Trailers','Commentaries','Deleted"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "film_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "language_id",
+     "ref_table": "language",
+     "ref_column": "language_id"
+    },
+    {
+     "column": "original_language_id",
+     "ref_table": "language",
+     "ref_column": "language_id"
+    }
+   ]
+  },
+  "film_actor": {
+   "columns": [
+    {
+     "name": "actor_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "film_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "actor_id",
+    "film_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "actor_id",
+     "ref_table": "actor",
+     "ref_column": "actor_id"
+    },
+    {
+     "column": "film_id",
+     "ref_table": "film",
+     "ref_column": "film_id"
+    }
+   ]
+  },
+  "film_category": {
+   "columns": [
+    {
+     "name": "film_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "category_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "film_id",
+    "category_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "film_id",
+     "ref_table": "film",
+     "ref_column": "film_id"
+    },
+    {
+     "column": "category_id",
+     "ref_table": "category",
+     "ref_column": "category_id"
+    }
+   ]
+  },
+  "film_text": {
+   "columns": [
+    {
+     "name": "film_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "title",
+     "type": "VARCHAR(255)"
+    },
+    {
+     "name": "description",
+     "type": "TEXT"
+    },
+    {
+     "name": "fulltext",
+     "type": "KEY"
+    }
+   ],
+   "primary_key": [
+    "film_id"
+   ],
+   "foreign_keys": []
+  },
+  "inventory": {
+   "columns": [
+    {
+     "name": "inventory_id",
+     "type": "MEDIUMINT"
+    },
+    {
+     "name": "film_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "store_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "inventory_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "store_id",
+     "ref_table": "store",
+     "ref_column": "store_id"
+    },
+    {
+     "column": "film_id",
+     "ref_table": "film",
+     "ref_column": "film_id"
+    }
+   ]
+  },
+  "language": {
+   "columns": [
+    {
+     "name": "language_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "name",
+     "type": "CHAR(20)"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "language_id"
+   ],
+   "foreign_keys": []
+  },
+  "payment": {
+   "columns": [
+    {
+     "name": "payment_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "customer_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "staff_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "rental_id",
+     "type": "INT"
+    },
+    {
+     "name": "amount",
+     "type": "DECIMAL(5,2)"
+    },
+    {
+     "name": "payment_date",
+     "type": "DATETIME"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "payment_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "rental_id",
+     "ref_table": "rental",
+     "ref_column": "rental_id"
+    },
+    {
+     "column": "customer_id",
+     "ref_table": "customer",
+     "ref_column": "customer_id"
+    },
+    {
+     "column": "staff_id",
+     "ref_table": "staff",
+     "ref_column": "staff_id"
+    }
+   ]
+  },
+  "rental": {
+   "columns": [
+    {
+     "name": "rental_id",
+     "type": "INT"
+    },
+    {
+     "name": "rental_date",
+     "type": "DATETIME"
+    },
+    {
+     "name": "inventory_id",
+     "type": "MEDIUMINT"
+    },
+    {
+     "name": "customer_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "return_date",
+     "type": "DATETIME"
+    },
+    {
+     "name": "staff_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "rental_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "staff_id",
+     "ref_table": "staff",
+     "ref_column": "staff_id"
+    },
+    {
+     "column": "inventory_id",
+     "ref_table": "inventory",
+     "ref_column": "inventory_id"
+    },
+    {
+     "column": "customer_id",
+     "ref_table": "customer",
+     "ref_column": "customer_id"
+    }
+   ]
+  },
+  "staff": {
+   "columns": [
+    {
+     "name": "staff_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "first_name",
+     "type": "VARCHAR(45)"
+    },
+    {
+     "name": "last_name",
+     "type": "VARCHAR(45)"
+    },
+    {
+     "name": "address_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "picture",
+     "type": "BLOB"
+    },
+    {
+     "name": "email",
+     "type": "VARCHAR(50)"
+    },
+    {
+     "name": "store_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "active",
+     "type": "BOOLEAN"
+    },
+    {
+     "name": "username",
+     "type": "VARCHAR(16)"
+    },
+    {
+     "name": "password",
+     "type": "VARCHAR(40)"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "staff_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "store_id",
+     "ref_table": "store",
+     "ref_column": "store_id"
+    },
+    {
+     "column": "address_id",
+     "ref_table": "address",
+     "ref_column": "address_id"
+    }
+   ]
+  },
+  "store": {
+   "columns": [
+    {
+     "name": "store_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "manager_staff_id",
+     "type": "TINYINT"
+    },
+    {
+     "name": "address_id",
+     "type": "SMALLINT"
+    },
+    {
+     "name": "last_update",
+     "type": "TIMESTAMP"
+    }
+   ],
+   "primary_key": [
+    "store_id"
+   ],
+   "foreign_keys": [
+    {
+     "column": "manager_staff_id",
+     "ref_table": "staff",
+     "ref_column": "staff_id"
+    },
+    {
+     "column": "address_id",
+     "ref_table": "address",
+     "ref_column": "address_id"
+    }
+   ]
+  }
+ }
+}
