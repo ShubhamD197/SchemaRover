@@ -1,5 +1,4 @@
 # SchemaRover — conventions for Claude Code
-
 Training-free NL→SQL over any MySQL/PostgreSQL DB. Three-stage hybrid
 schema linking (lexical + semantic + FK traversal) retrieves a relevant
 table subset before generation.
@@ -36,3 +35,9 @@ lexical original + FK     full_recall 76.4%  prec 42.5%
 lexical improved          full_recall 73.8%  prec 77.1%
 lexical improved + FK     full_recall 93.8%  prec 49.9%   <- current default
 lexical improved + condFK full_recall 88.2%  prec 62.4%
+
+## Session rules
+- Implement exactly the task named. No refactoring, no "while I was here."
+- No performance claim without before/after harness output.
+- If a change makes metrics worse, say so and revert. Failed experiments
+  are recorded in PLAN.md as ablations, not hidden.
