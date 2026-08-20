@@ -79,6 +79,30 @@ tr:hover td{background:rgba(122,162,247,.05)}
   border-top-color:#06231f;border-radius:50%;animation:s .7s linear infinite;margin-right:7px;vertical-align:-1px}
 @keyframes s{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}.chip{transition:none}}
+
+/* ---- evaluation section ---- */
+.ev-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:18px}
+.ev-card{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:14px}
+.ev-card .db{font-family:var(--mono);font-size:11px;color:var(--ink-dim);letter-spacing:.04em}
+.ev-card .sz{font-size:11px;color:var(--ink-faint);margin-bottom:10px}
+.ev-card .big{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.ev-card .lbl{font-size:11px;color:var(--ink-dim);margin-top:2px}
+.bar{height:7px;background:#0d1620;border-radius:4px;overflow:hidden;margin-top:11px}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--live)}
+.bar.wide i{background:var(--danger)}
+.bar.mid i{background:var(--fk)}
+table.ev{width:100%;border-collapse:collapse;font-size:13px}
+table.ev th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.09em;
+  color:var(--ink-dim);font-weight:600;padding:7px 10px;border-bottom:1px solid var(--line)}
+table.ev td{padding:7px 10px;border-bottom:1px solid rgba(38,54,74,.5);font-variant-numeric:tabular-nums}
+table.ev tr.best td{background:rgba(79,209,197,.07)}
+table.ev tr.base td{color:var(--ink-faint)}
+table.ev td.n{font-family:var(--mono)}
+.note{font-size:12.5px;color:var(--ink-dim);margin-top:14px;padding-left:11px;
+  border-left:2px solid var(--live)}
+.note b{color:var(--ink)}
+.subh{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-dim);
+  font-weight:600;margin:22px 0 10px}
 </style>
 </head>
 <body>
@@ -90,6 +114,7 @@ tr:hover td{background:rgba(122,162,247,.05)}
 </header>
 
 <!-- CONNECT -->
+
 <div class="panel">
   <h2>Database connection</h2>
   <div class="row">
@@ -155,6 +180,99 @@ tr:hover td{background:rgba(122,162,247,.05)}
   <h2>History</h2>
   <div id="histList"></div>
 </div>
+
+<!-- ===== evaluation (static: works with no backend, no internet) ===== -->
+<div class="panel" id="evalPanel">
+  <h2>Evaluation &mdash; measured retrieval quality</h2>
+
+  <div class="ev-grid">
+    <div class="ev-card">
+      <div class="db">SPIDER (benchmark)</div>
+      <div class="sz">4.5 tables avg &middot; 1034 questions</div>
+      <div class="big">91.5%</div>
+      <div class="lbl">of the schema sent</div>
+      <div class="bar wide"><i style="width:91.5%"></i></div>
+      <div class="lbl" style="margin-top:8px">found all tables: 100%</div>
+    </div>
+    <div class="ev-card">
+      <div class="db">SAKILA (real)</div>
+      <div class="sz">16 tables &middot; 20 questions</div>
+      <div class="big">70.6%</div>
+      <div class="lbl">of the schema sent</div>
+      <div class="bar mid"><i style="width:70.6%"></i></div>
+      <div class="lbl" style="margin-top:8px">found all tables: 85% (17/20)</div>
+    </div>
+    <div class="ev-card">
+      <div class="db">ADVENTUREWORKS (real)</div>
+      <div class="sz">68 tables &middot; 80 questions</div>
+      <div class="big" style="color:var(--live)">48.7%</div>
+      <div class="lbl">of the schema sent</div>
+      <div class="bar"><i style="width:48.7%"></i></div>
+      <div class="lbl" style="margin-top:8px">found all tables: 100% (80/80)</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>Read both numbers together.</b> &ldquo;Found all tables&rdquo; can always be pushed to
+    100% by simply sending the whole database &mdash; so it means nothing without
+    &ldquo;schema sent&rdquo; beside it. The benchmark databases average 4.5 tables, so there
+    is almost nothing to filter out. <b>The bigger the database, the more we save:
+    91.5% &rarr; 70.6% &rarr; 48.7% as size grows 4.5 &rarr; 16 &rarr; 68 tables.</b>
+  </div>
+
+  <div class="subh">Each stage earns its place &mdash; AdventureWorks, 68 tables</div>
+  <table class="ev">
+    <thead><tr><th>Configuration</th><th>Found all tables</th><th>Tables sent</th>
+      <th>Schema sent</th><th>Prompt tokens</th></tr></thead>
+    <tbody>
+      <tr class="base"><td>send everything (no retrieval)</td><td class="n">100.0%</td>
+        <td class="n">68.00</td><td class="n">100.0%</td><td class="n">5305</td></tr>
+      <tr><td>word matching only</td><td class="n">23.8%</td><td class="n">7.92</td>
+        <td class="n">11.7%</td><td class="n">457</td></tr>
+      <tr><td>+ meaning matching</td><td class="n">91.2%</td><td class="n">20.36</td>
+        <td class="n">29.9%</td><td class="n">1471</td></tr>
+      <tr><td>+ follow links (uncapped)</td><td class="n">100.0%</td><td class="n">39.27</td>
+        <td class="n">57.8%</td><td class="n">3153</td></tr>
+      <tr class="best"><td><b>+ follow links, hub-capped &mdash; shipped</b></td>
+        <td class="n"><b>100.0%</b></td><td class="n">33.12</td>
+        <td class="n"><b>48.7%</b></td><td class="n"><b>2684</b></td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    Word matching alone finds everything for under a quarter of questions. Meaning
+    matching takes it to 91%. Following foreign-key links completes it.
+    <b>Capping hub tables cuts the prompt by 15% at identical accuracy</b> &mdash; on
+    this database 16 tables point at <code>product</code>, so one hop used to drag
+    all of them in.
+  </div>
+
+  <div class="subh">Why the benchmark was hiding the problem</div>
+  <table class="ev">
+    <thead><tr><th>Database</th><th>Tables</th><th>Tables an answer needs</th>
+      <th>That as a share of the schema</th></tr></thead>
+    <tbody>
+      <tr><td>Spider (benchmark)</td><td class="n">4.5</td><td class="n">1.7</td>
+        <td class="n">38%</td></tr>
+      <tr><td>Sakila</td><td class="n">16</td><td class="n">4.5</td><td class="n">28%</td></tr>
+      <tr class="best"><td>AdventureWorks</td><td class="n">68</td><td class="n">2.3</td>
+        <td class="n"><b>3.4%</b></td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    On the benchmark, the average question already needs more than a third of the
+    whole database &mdash; there is nothing to filter. On a real 68-table database it
+    needs 3.4%, so <b>filtering is the entire job</b>. This is why we stopped
+    trusting the benchmark and built our own large-schema evaluation.
+  </div>
+
+  <div class="note" style="border-left-color:var(--fk)">
+    <b>Honest limits.</b> These measure whether we retrieve the right <i>tables</i> &mdash;
+    the ceiling on final accuracy, not final accuracy itself. End-to-end answer
+    accuracy is the next milestone. Sakila still fails 3 of 20 questions, and we
+    know exactly why.
+  </div>
+</div>
+
 
 </div>
 <script>

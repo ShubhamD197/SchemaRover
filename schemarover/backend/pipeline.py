@@ -192,7 +192,7 @@ def build_prompt(question: str, schema: dict, tables: list, dialect: str = "MySQ
 
 # ---------------- LLM ----------------
 
-def generate_sql(prompt: str, api_key: str, model: str = "gemini-2.0-flash") -> str:
+def generate_sql(prompt: str, api_key: str, model: str = "gemini-3.6-flash") -> str:
     """Gemini Flash at temperature 0 for deterministic, reproducible output
     (required so the paper's numbers are reproducible)."""
     import google.generativeai as genai
@@ -201,7 +201,10 @@ def generate_sql(prompt: str, api_key: str, model: str = "gemini-2.0-flash") -> 
     llm = genai.GenerativeModel(model)
     resp = llm.generate_content(
         prompt,
-        generation_config={"temperature": 0.0, "max_output_tokens": 512},
+        # NOTE: current Gemini flash models spend internal "thinking" tokens
+        # that count against this budget. At 512 the visible SQL was being
+        # truncated mid-statement on multi-join queries. Keep this generous.
+        generation_config={"temperature": 0.0, "max_output_tokens": 4096},
     )
     return (resp.text or "").strip()
 
