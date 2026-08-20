@@ -11,3 +11,7 @@ venv.bak/
 __pycache__/
 *.py[cod]
 *$py.class
+
+# large generated MySQL data dump (95 MB) — regenerate with
+# backend/make_mysql_adventureworks.py
+*_mysql_data.sql

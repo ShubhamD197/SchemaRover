@@ -290,47 +290,88 @@ Say these before the panel finds them. It builds trust.
 
 # PART 7 — Live demo runsheet
 
-Keep it to about 4 minutes. Practise it once beforehand.
+Keep it to about 5 minutes. Practise it once beforehand.
 
-1. **Show the empty dashboard.** *"It knows nothing about any database yet."*
-2. **Paste the connection string.** Point at the table count.
-   *"Zero configuration — it read the structure by itself."*
-3. **Ask a simple question:** *"How many films are there?"*
-   - Point at the retrieval panel and the highlighted tables.
-   - Point at the generated SQL. *"The user always sees exactly what ran."*
-4. **Ask a join question:** *"List film titles and their categories"*
-   - Point at the **amber** chips. *"Nobody said 'film_category'. The
-     foreign-key graph found it."*
-5. **Scroll to the Evaluation section** — the measured results on all three
-   databases.
-6. **Show the history panel.**
-
-**Connection string for the demo (no MySQL setup needed):**
-
-```
-sqlite:///D:/Shubham Dhumal/SchemaRover/spider_data/database/sakila_1/sakila_1.sqlite
-```
-
-**To start it:**
+**Start the server first** (leave it running before the panel walks in):
 
 ```
 cd "D:\Shubham Dhumal\SchemaRover\CodeBase\schemarover\backend"
 python -m uvicorn main:app --port 8000
 ```
 
-Then open http://localhost:8000
+Open **http://localhost:8000**
 
-**If the internet or the API key fails:** go straight to the Evaluation
+**Connection string — the real 68-table business database, already imported
+into your MySQL:**
+
+```
+mysql+pymysql://root:YOURPASSWORD@127.0.0.1:3306/adventureworks
+```
+
+## The five steps
+
+1. **Show the empty dashboard.** *"It knows nothing about any database yet."*
+
+2. **Paste the connection string and connect.** Point at the counter:
+   **68 tables.**
+   *"Zero configuration. It read the whole structure by itself — 68 tables,
+   465 columns, 90 foreign-key relationships. And this is exactly the database
+   our evaluation numbers were measured on."*
+
+3. **Ask the star question:** *"Show every employee and the department they
+   work in."*
+
+   Point at **10 of 68 tables lit up**, then walk down the stage breakdown —
+   this is the heart of your whole presentation:
+
+   - **Stage 1, word matching** found `department` and `employee` — the two
+     words in the question.
+   - **Stage 2, meaning matching** found `employeedepartmenthistory` — the
+     link table. ***Nobody typed that word.***
+   - **Stage 3, following links** found `person` — where the names are
+     actually stored, never mentioned in the question.
+
+   Then point at the SQL: it joins exactly those four tables. The answer comes
+   back "Ken Sánchez — Executive".
+
+   *"That one question shows all three stages doing something the other two
+   could not."*
+
+4. **Ask a second, tighter one:** *"List the shipping methods available."*
+   → 8 of 68 tables. *"We sent an eighth of the database."*
+
+5. **Scroll to the Evaluation section.** Walk through the three-database table
+   and the trend: 91.5% → 70.6% → 48.7%.
+
+6. **Show the history panel.** Every question logged with timing and tables.
+
+## Safety nets
+
+**If MySQL will not connect**, use the SQLite database — no server needed:
+
+```
+sqlite:///D:/Shubham Dhumal/SchemaRover/spider_data/database/sakila_1/sakila_1.sqlite
+```
+
+**If the internet or the API key fails**, go straight to the Evaluation
 section and present the measurement story. Say: *"The retrieval works with no
-AI model involved at all — these numbers were measured without it."* That is
+AI model involved at all — these numbers were measured without one."* That is
 arguably the stronger demo anyway, because it is evidence rather than a happy
 path.
 
-**Expect this and pre-empt it:** on the 16-table demo database we light up
-about 10 of the 16 tables. If someone points at that, say:
-*"Exactly — on a small database there is little to filter, which is precisely
-what we discovered, and why we moved to a 68-table database where we send under
-half."*
+## Do NOT ask these live
+
+They retrieve badly and will undercut you:
+
+| Avoid | What happens |
+|---|---|
+| "List all department names." | 50 of 68 tables — "name" matches a `Name` column in nearly every table |
+| "How many products do we sell?" | 43 of 68 — "product" matches 15 product-named tables |
+
+**If a panel member asks one anyway**, do not hide it:
+*"Good example of our known weakness. We still retrieve everything needed —
+recall is 100% — but we over-retrieve. Recall is what caps correctness;
+tightening precision is exactly what our next phase is about."*
 
 ---
 
