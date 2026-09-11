@@ -73,6 +73,125 @@ def expand_with_fk_traversal(matched_tables, schema, max_hops: int = 1,
     return list(result)
 
 
+# ---------------------------------------------------------------------------
+# PATH COMPLETION — the fix for the precision collapse
+# ---------------------------------------------------------------------------
+#
+# THE PROBLEM WITH EXPANDING OUTWARD
+# ----------------------------------
+# expand_with_fk_traversal() asks the wrong question. It asks:
+#
+#     "who is next to a table I matched?"
+#
+# On AdventureWorks `employee` has 7 neighbours and `person` has 7 more, so
+# matching three tables drags in about twenty. Measured: lexical+semantic
+# sends 20.4 tables, and adding one blind hop takes it to 39.3 out of 68.
+# Precision falls to 6.9%.
+#
+# THE RIGHT QUESTION
+# ------------------
+#     "does this table sit BETWEEN two things the user asked about?"
+#
+# That is what a join path is. A table earns its place in the prompt only if
+# it CONNECTS two matched tables — not merely because it touches one.
+#
+#     "Show every employee and the department they work in"
+#
+#     matched: employee, department, person
+#
+#     employeedepartmenthistory  employee --1--> it --1--> department
+#                                1 + 1 == 2, it lies on the path      KEEP
+#     employeepayhistory         touches employee, leads nowhere else  DROP
+#     jobcandidate               touches employee, leads nowhere else  DROP
+#     salesperson, document, purchaseorderheader, ...                  DROP
+#
+# Four tables instead of thirty-nine, and the one table nobody would ever
+# name out loud is still there.
+#
+# HOW "BETWEEN" IS DECIDED
+# ------------------------
+# Standard shortest-path membership. Node c lies on a shortest path between
+# seeds s1 and s2 when
+#
+#     dist(s1, c) + dist(c, s2) == dist(s1, s2)
+#
+# We only look at pairs no further apart than `max_path_len`, so this stays
+# cheap: one BFS per seed, each cut off at that depth.
+#
+# max_path_len=2 means "allow at most one table in the middle", which covers
+# junction and weak-entity tables — the case that actually matters. Raise it
+# to 3 to allow two-table bridges, at some cost in precision.
+
+from collections import deque
+
+
+def _bfs(graph, start, limit):
+    """Distances from `start`, giving up past `limit` hops."""
+    dist = {start: 0}
+    queue = deque([start])
+    while queue:
+        node = queue.popleft()
+        if dist[node] >= limit:
+            continue
+        for neighbor in graph.get(node, ()):
+            if neighbor not in dist:
+                dist[neighbor] = dist[node] + 1
+                queue.append(neighbor)
+    return dist
+
+
+def expand_with_path_completion(matched_tables, schema, max_path_len: int = 2,
+                                include_identity_parents: bool = True):
+    """Keep a table only if it lies on a short path BETWEEN two matched tables.
+
+    Unlike expand_with_fk_traversal this never inherits a hub's neighbourhood,
+    because a neighbour that leads nowhere else is not on a path to anything.
+
+    include_identity_parents additionally pulls in any table that a matched
+    table cannot be understood without — the parents named in its PRIMARY KEY.
+    The path rule alone cannot do this, because such a parent is often a dead
+    end that no path runs through:
+
+        `employee` -> `person`         the names live in the parent
+        `film_category` -> `category`  the junction is two bare integers
+
+    These are not expansions. They are the rest of the thing already matched.
+    See table_roles.close_over_identity.
+
+    With fewer than two matched tables there are no pairs and so nothing to
+    connect — the seed set is returned unchanged. That is correct: a
+    single-table question needs no join.
+    """
+    graph = build_fk_graph(schema)
+    seeds = set(matched_tables)
+
+    if include_identity_parents:
+        from table_roles import close_over_identity
+        seeds = close_over_identity(seeds, schema)
+
+    seeds = sorted(seeds)
+    result = set(seeds)
+
+    if len(seeds) < 2:
+        return list(result)
+
+    dist = {s: _bfs(graph, s, max_path_len) for s in seeds}
+
+    for i, s1 in enumerate(seeds):
+        d1 = dist[s1]
+        for s2 in seeds[i + 1:]:
+            d2 = dist[s2]
+            gap = d1.get(s2)
+            # unreachable, too far, or already touching (nothing sits between)
+            if gap is None or gap > max_path_len or gap < 2:
+                continue
+            for node, dn in d1.items():
+                if node not in result and dn + d2.get(node, 1 << 30) == gap:
+                    result.add(node)
+
+    return list(result)
+
+
 def _self_check():
     """One star-shaped schema: `hub` is referenced by 5 leaves. Expanding
     from a leaf should reach the hub; expanding from the hub should be
@@ -93,7 +212,78 @@ def _self_check():
     # a leaf has 1 neighbour, so it still reaches the hub under the same cap
     assert set(expand_with_fk_traversal(["leaf0"], schema, max_degree=4)) == {"leaf0", "hub"}
 
+    _path_completion_self_check()
     print("fk_traversal self-check: OK")
+
+
+def _path_completion_self_check():
+    """The real AdventureWorks shape, shrunk down.
+
+    employee is a hub: the bridge to department hangs off it, but so do three
+    dead-end tables that no question about departments ever needs.
+    """
+    def fk(col, ref):
+        return {"column": col, "ref_table": ref, "ref_column": "id"}
+
+    schema = {"tables": {
+        "department": {"columns": [], "primary_key": ["DepartmentID"], "foreign_keys": []},
+        "person":     {"columns": [], "primary_key": ["BusinessEntityID"], "foreign_keys": []},
+        "shift":      {"columns": [], "primary_key": ["ShiftID"], "foreign_keys": []},
+        "employee": {"columns": [], "primary_key": ["BusinessEntityID"],
+                     "foreign_keys": [fk("BusinessEntityID", "person")]},
+        # the bridge — the only route from employee to department
+        "employeedepartmenthistory": {
+            "columns": [], "primary_key": ["BusinessEntityID", "DepartmentID",
+                                           "ShiftID", "StartDate"],
+            "foreign_keys": [fk("BusinessEntityID", "employee"),
+                             fk("DepartmentID", "department"),
+                             fk("ShiftID", "shift")]},
+        # dead ends hanging off the employee hub
+        "employeepayhistory": {"columns": [], "primary_key": ["BusinessEntityID", "RateChangeDate"],
+                               "foreign_keys": [fk("BusinessEntityID", "employee")]},
+        "jobcandidate":       {"columns": [], "primary_key": ["JobCandidateID"],
+                               "foreign_keys": [fk("BusinessEntityID", "employee")]},
+        "salesperson":        {"columns": [], "primary_key": ["BusinessEntityID"],
+                               "foreign_keys": [fk("BusinessEntityID", "employee")]},
+    }}
+
+    seeds = ["employee", "department", "person"]
+
+    # blind expansion inherits the whole employee neighbourhood
+    blind = set(expand_with_fk_traversal(seeds, schema, max_hops=1))
+    assert "employeepayhistory" in blind and "jobcandidate" in blind, blind
+    assert len(blind) == 7, blind
+
+    # path completion keeps the bridge and drops every dead end
+    got = set(expand_with_path_completion(seeds, schema))
+    assert got == {"employee", "department", "person",
+                   "employeedepartmenthistory"}, got
+
+    # employee is a 1:1 subtype of person, so person is pulled in even when
+    # it was never matched and sits on no path
+    got2 = set(expand_with_path_completion(["employee", "department"], schema))
+    assert "person" in got2, got2
+    assert "employeepayhistory" not in got2, got2
+    without = set(expand_with_path_completion(["employee", "department"], schema,
+                                              include_identity_parents=False))
+    assert "person" not in without, without
+
+    # one seed alone means no pairs, so nothing is CONNECTED — but the
+    # subtype's other half still comes along, because it is the same entity
+    assert set(expand_with_path_completion(["employee"], schema)) == {"employee", "person"}
+    assert set(expand_with_path_completion(
+        ["employee"], schema, include_identity_parents=False)) == {"employee"}
+
+    # a bridge two hops away is out of reach at the default, found at 3
+    far = {"tables": {
+        "a": {"columns": [], "primary_key": ["id"], "foreign_keys": []},
+        "m1": {"columns": [], "primary_key": ["id"], "foreign_keys": [fk("a_id", "a")]},
+        "m2": {"columns": [], "primary_key": ["id"], "foreign_keys": [fk("m1_id", "m1")]},
+        "b": {"columns": [], "primary_key": ["id"], "foreign_keys": [fk("m2_id", "m2")]},
+    }}
+    assert set(expand_with_path_completion(["a", "b"], far)) == {"a", "b"}
+    assert set(expand_with_path_completion(["a", "b"], far, max_path_len=3)) == {
+        "a", "b", "m1", "m2"}
 
 
 if __name__ == "__main__":

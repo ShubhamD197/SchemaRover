@@ -41,9 +41,9 @@ import sys
 from collections import defaultdict
 
 from spider_adapter import load_spider, gold_tables
-from lexical_match import lexical_match as lexical_original
+from utils.lexical_match import lexical_match as lexical_original
 from lexical_match_improved import lexical_match as lexical_improved
-from fk_traversal import expand_with_fk_traversal
+from fk_traversal import expand_with_fk_traversal, expand_with_path_completion
 from pipeline import build_schema_text
 
 # repo data folder (CodeBase/), two levels up from backend/
@@ -89,6 +89,18 @@ DATASETS = {
         "adventureworks_schema.json", "adventureworks_eval.json"
     ),
 }
+
+# Same questions, same structure, names stripped to legacy-style codes.
+# See obfuscate.py — this is how we tell "found it by reading the name" apart
+# from "found it by following the keys".
+def _obfuscated(name, level):
+    from obfuscate import obfuscate_cases
+    return lambda: obfuscate_cases(DATASETS[name](), level=level)
+
+
+for _base in ("spider", "sakila", "adventureworks"):
+    DATASETS[_base + "_abbrev"] = _obfuscated(_base, "abbrev")
+    DATASETS[_base + "_opaque"] = _obfuscated(_base, "opaque")
 
 
 # ---------------- the measurement ----------------
@@ -173,6 +185,10 @@ def m_lexical_fk(question, schema):
     return expand_with_fk_traversal(lexical_improved(question, schema), schema, max_hops=1)
 
 
+def m_lexical_path(question, schema):
+    return expand_with_path_completion(lexical_improved(question, schema), schema)
+
+
 def make_semantic_variants():
     """Built lazily: importing sentence-transformers is slow and it may
     not be installed. Embedders are cached per schema (never per query)."""
@@ -193,8 +209,22 @@ def make_semantic_variants():
     def m_lex_sem_fk(question, schema):
         return expand_with_fk_traversal(m_lex_sem(question, schema), schema, max_hops=1)
 
+    def m_lex_sem_path(question, schema):
+        return expand_with_path_completion(m_lex_sem(question, schema), schema)
+
+    def m_lex_sem_path_nosub(question, schema):
+        return expand_with_path_completion(m_lex_sem(question, schema), schema,
+                                           include_identity_parents=False)
+
+    def m_lex_sem_path3(question, schema):
+        return expand_with_path_completion(m_lex_sem(question, schema), schema,
+                                           max_path_len=3)
+
     return [("lexical + semantic", m_lex_sem),
-            ("lexical + semantic + FK", m_lex_sem_fk)]
+            ("lexical + semantic + FK", m_lex_sem_fk),
+            ("lexical + semantic + PATH", m_lex_sem_path),
+            ("  PATH, no identity parents", m_lex_sem_path_nosub),
+            ("  PATH, max_path_len=3", m_lex_sem_path3)]
 
 
 BASE_VARIANTS = [
@@ -202,6 +232,7 @@ BASE_VARIANTS = [
     ("lexical (original, buggy)", m_lexical_original),
     ("lexical (improved)", m_lexical),
     ("lexical + FK", m_lexical_fk),
+    ("lexical + PATH", m_lexical_path),
 ]
 
 # ---------------- A1: degree-aware FK expansion ----------------

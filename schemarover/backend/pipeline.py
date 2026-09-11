@@ -192,19 +192,50 @@ def build_prompt(question: str, schema: dict, tables: list, dialect: str = "MySQ
 
 # ---------------- LLM ----------------
 
+_CLIENT = None
+
+
+def _client(api_key: str):
+    """One client per process — the old code rebuilt it (and re-did the TLS
+    handshake) on every single query."""
+    global _CLIENT
+    if _CLIENT is None:
+        from google import genai
+        _CLIENT = genai.Client(api_key=api_key)
+    return _CLIENT
+
+
 def generate_sql(prompt: str, api_key: str, model: str = "gemini-3.6-flash") -> str:
     """Gemini Flash at temperature 0 for deterministic, reproducible output
-    (required so the paper's numbers are reproducible)."""
-    import google.generativeai as genai
+    (required so the paper's numbers are reproducible).
 
-    genai.configure(api_key=api_key)
-    llm = genai.GenerativeModel(model)
-    resp = llm.generate_content(
-        prompt,
-        # NOTE: current Gemini flash models spend internal "thinking" tokens
-        # that count against this budget. At 512 the visible SQL was being
-        # truncated mid-statement on multi-join queries. Keep this generous.
-        generation_config={"temperature": 0.0, "max_output_tokens": 4096},
+    THINKING BUDGET — measured, this is the whole latency story.
+    Translating a question into SQL against a schema we already handed the
+    model is not a reasoning task, but Flash spends "thinking" tokens on it
+    anyway. Measured on the AdventureWorks employee/department question:
+
+        default thinking   1590 thought tokens for 93 tokens of SQL   10.03s
+        thinking_level low  493 thought tokens for 78 tokens of SQL    6.32s
+
+    94% of generated tokens were invisible reasoning. Gemini 3.x refuses
+    thinking_budget=0 (400 INVALID_ARGUMENT); "low" is as far down as it
+    goes, so that is the floor here.
+
+    This also moves off google-generativeai (dead, no thinking_config at
+    all) onto google-genai, which is why the knob is reachable now.
+    """
+    from google.genai import types
+
+    resp = _client(api_key).models.generate_content(
+        model=model,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.0,
+            # 1024 is ample now that thinking is capped; the old 4096 existed
+            # only because thinking was eating the budget before the SQL.
+            max_output_tokens=1024,
+            thinking_config=types.ThinkingConfig(thinking_level="low"),
+        ),
     )
     return (resp.text or "").strip()
 

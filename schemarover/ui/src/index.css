@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+/* Utilities point at indirection vars so a theme swap needs no component changes. */
+@theme {
+  --color-ink: var(--ink);
+  --color-slate: var(--slate);
+  --color-hush: var(--hush);
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-rule: var(--rule);
+  --color-signal: var(--signal);
+  --color-beacon: var(--beacon);
+  --color-alarm: var(--alarm);
+  --color-onink: var(--onink);
+  --color-onsignal: var(--onsignal);
+  --color-onbeacon: var(--onbeacon);
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: light;
+  --ink: #101a2b;
+  --slate: #55637a;
+  --hush: #8b98ad;
+  --paper: #f1f3f8;
+  --card: #ffffff;
+  --rule: #dfe4ee;
+  --signal: #2b4eea;
+  --beacon: #e9a23b;
+  --alarm: #c0392b;
+  --onink: #ffffff;
+  --onsignal: #ffffff;
+  --onbeacon: #101a2b; /* amber is a light surface in both themes */
+}
+
+/* Dark inverts the roles; signal and beacon lift so they still carry on a dark ground. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e8edf6;
+  --slate: #98a6be;
+  --hush: #6b7a93;
+  --paper: #0b121e;
+  --card: #131c2b;
+  --rule: #253145;
+  --signal: #6d8bff;
+  --beacon: #f0b45c;
+  --alarm: #e4796b;
+  --onink: #0b121e;
+  --onsignal: #0b121e;
+  --onbeacon: #0b121e;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+/* Signature: the sweep. A scanner bar crossing the rule under the input. */
+@keyframes sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+.sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--signal) 45%,
+    var(--signal) 55%,
+    transparent
+  );
+  animation: sweep 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .sweep::after {
+    animation: none;
+    opacity: 0.6;
+  }
+}
