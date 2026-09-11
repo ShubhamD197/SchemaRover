@@ -12,15 +12,17 @@ Run:
     uvicorn main:app --reload --port 8000
 """
 
+import hmac
 import os
 import json
 import sqlite3
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from connection import manager, ConnectionError_
@@ -73,6 +75,22 @@ def log_history(db, res):
 init_history()
 
 
+# ---------------- admin gate ----------------
+# /api/connect points this server at an arbitrary database, so it is privileged.
+# One shared token, set in .env. Not user accounts — this is a single-operator console.
+ADMIN_TOKEN = os.environ.get("SCHEMAROVER_ADMIN_TOKEN", "")
+
+
+def require_admin(x_admin_token: str = Header(default="")):
+    if not ADMIN_TOKEN:
+        raise HTTPException(
+            status_code=500,
+            detail="SCHEMAROVER_ADMIN_TOKEN is not set in .env — admin endpoints are disabled.",
+        )
+    if not hmac.compare_digest(x_admin_token, ADMIN_TOKEN):
+        raise HTTPException(status_code=401, detail="Invalid admin token.")
+
+
 # ---------------- models ----------------
 
 class ConnectRequest(BaseModel):
@@ -91,7 +109,7 @@ def health():
     return {"ok": True, "connected": manager.is_connected()}
 
 
-@app.post("/api/connect")
+@app.post("/api/connect", dependencies=[Depends(require_admin)])
 def connect(req: ConnectRequest):
     try:
         active = manager.connect(req.db_url)
@@ -115,7 +133,7 @@ def connect(req: ConnectRequest):
     }
 
 
-@app.get("/api/schema")
+@app.get("/api/schema", dependencies=[Depends(require_admin)])
 def schema_endpoint():
     if STATE["schema"] is None:
         raise HTTPException(status_code=400, detail="Not connected to a database.")
@@ -159,7 +177,7 @@ def query(req: QueryRequest):
     return res
 
 
-@app.get("/api/history")
+@app.get("/api/history", dependencies=[Depends(require_admin)])
 def history(limit: int = 50):
     con = sqlite3.connect(HISTORY_DB)
     con.row_factory = sqlite3.Row
@@ -170,9 +188,22 @@ def history(limit: int = 50):
     return [dict(r) for r in rows]
 
 
-@app.get("/")
-def index():
-    f = Path(__file__).parent.parent / "frontend" / "index.html"
-    if f.exists():
-        return FileResponse(f)
-    return {"message": "SchemaRover API. Frontend not found."}
+# ---------------- static frontend ----------------
+# Serves the built Vite app. Any non-/api path falls through to index.html so
+# client-side routes like /admin work on a hard refresh.
+UI_DIST = Path(__file__).parent.parent / "ui" / "dist"
+LEGACY = Path(__file__).parent.parent / "frontend" / "legacy-index.html"
+
+if UI_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=UI_DIST / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    def spa(full_path: str):
+        return FileResponse(UI_DIST / "index.html")
+
+else:
+    @app.get("/")
+    def index():
+        if LEGACY.exists():
+            return FileResponse(LEGACY)
+        return {"message": "SchemaRover API. Run `npm run build` in ui/ to serve the frontend."}

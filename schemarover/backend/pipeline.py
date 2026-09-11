@@ -28,9 +28,27 @@ risk. Losing 5.6% of queries permanently is worse than carrying ~0.4
 extra tables.
 
 So the DEFAULT is always-expand. `conditional_fk=True` is kept as a flag
-because the comparison is a good ablation row in the paper, and because
-on a very large schema (100+ tables) the precision cost may start to
-dominate — re-measure there before assuming this default still holds.
+because the comparison is a good ablation row in the paper.
+
+UPDATE — the prediction above came true (task A1)
+-------------------------------------------------
+We re-measured on a real 68-table schema and the warning was justified.
+One hop adds +1.3 tables on Spider and +15.3 on AdventureWorks, because
+real databases have hub tables and toy ones do not (AdventureWorks has 16
+tables pointing at `product`).
+
+So expansion is now capped by degree: we do not expand OUTWARD from a
+table with more than `max_degree` foreign-key neighbours. Measured:
+
+    dataset          max_degree=off        max_degree=8
+    Spider dev       100.0% / 91.5% sent   100.0% / 91.5% sent  (identical)
+    Sakila            85.0% / 70.6% sent    85.0% / 70.6% sent  (identical)
+    AdventureWorks   100.0% / 57.8% sent   100.0% / 48.7% sent  (better)
+
+Identical recall everywhere, 9 points less schema on the large database,
+no dataset made worse — so 8 is the default. Sweep it before changing:
+
+    python eval_harness.py adventureworks --sweep-degree
 """
 
 import re
@@ -94,7 +112,7 @@ def should_expand(question: str, seed: list, conditional: bool = False) -> bool:
 
 
 def link_schema(question: str, schema: dict, embedder=None, max_hops: int = 1,
-                conditional_fk: bool = False) -> dict:
+                conditional_fk: bool = False, max_degree: int | None = 8) -> dict:
     """Run the three stages. Returns retrieved tables + per-stage detail
     (the detail is what makes the demo legible and the paper's ablation easy)."""
     lexical = set(lexical_match(question, schema))
@@ -108,7 +126,8 @@ def link_schema(question: str, schema: dict, embedder=None, max_hops: int = 1,
 
     seed = lexical | semantic
     expanded = should_expand(question, list(seed), conditional_fk)
-    final = set(expand_with_fk_traversal(list(seed), schema, max_hops)) if expanded else set(seed)
+    final = (set(expand_with_fk_traversal(list(seed), schema, max_hops, max_degree))
+             if expanded else set(seed))
 
     # last-resort: never hand the LLM an empty schema
     if not final and schema["tables"]:
@@ -173,16 +192,50 @@ def build_prompt(question: str, schema: dict, tables: list, dialect: str = "MySQ
 
 # ---------------- LLM ----------------
 
-def generate_sql(prompt: str, api_key: str, model: str = "gemini-2.0-flash") -> str:
-    """Gemini Flash at temperature 0 for deterministic, reproducible output
-    (required so the paper's numbers are reproducible)."""
-    import google.generativeai as genai
+_CLIENT = None
 
-    genai.configure(api_key=api_key)
-    llm = genai.GenerativeModel(model)
-    resp = llm.generate_content(
-        prompt,
-        generation_config={"temperature": 0.0, "max_output_tokens": 512},
+
+def _client(api_key: str):
+    """One client per process — the old code rebuilt it (and re-did the TLS
+    handshake) on every single query."""
+    global _CLIENT
+    if _CLIENT is None:
+        from google import genai
+        _CLIENT = genai.Client(api_key=api_key)
+    return _CLIENT
+
+
+def generate_sql(prompt: str, api_key: str, model: str = "gemini-3.6-flash") -> str:
+    """Gemini Flash at temperature 0 for deterministic, reproducible output
+    (required so the paper's numbers are reproducible).
+
+    THINKING BUDGET — measured, this is the whole latency story.
+    Translating a question into SQL against a schema we already handed the
+    model is not a reasoning task, but Flash spends "thinking" tokens on it
+    anyway. Measured on the AdventureWorks employee/department question:
+
+        default thinking   1590 thought tokens for 93 tokens of SQL   10.03s
+        thinking_level low  493 thought tokens for 78 tokens of SQL    6.32s
+
+    94% of generated tokens were invisible reasoning. Gemini 3.x refuses
+    thinking_budget=0 (400 INVALID_ARGUMENT); "low" is as far down as it
+    goes, so that is the floor here.
+
+    This also moves off google-generativeai (dead, no thinking_config at
+    all) onto google-genai, which is why the knob is reachable now.
+    """
+    from google.genai import types
+
+    resp = _client(api_key).models.generate_content(
+        model=model,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.0,
+            # 1024 is ample now that thinking is capped; the old 4096 existed
+            # only because thinking was eating the budget before the SQL.
+            max_output_tokens=1024,
+            thinking_config=types.ThinkingConfig(thinking_level="low"),
+        ),
     )
     return (resp.text or "").strip()
 
