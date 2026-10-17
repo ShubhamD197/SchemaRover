@@ -4,5 +4,5 @@ sqlalchemy
 pymysql
 psycopg2-binary
 python-dotenv
-google-generativeai
+google-genai>=1.30
 sentence-transformers

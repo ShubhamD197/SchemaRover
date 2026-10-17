@@ -192,7 +192,6 @@ def history(limit: int = 50):
 # Serves the built Vite app. Any non-/api path falls through to index.html so
 # client-side routes like /admin work on a hard refresh.
 UI_DIST = Path(__file__).parent.parent / "ui" / "dist"
-LEGACY = Path(__file__).parent.parent / "frontend" / "legacy-index.html"
 
 if UI_DIST.exists():
     app.mount("/assets", StaticFiles(directory=UI_DIST / "assets"), name="assets")
@@ -204,6 +203,4 @@ if UI_DIST.exists():
 else:
     @app.get("/")
     def index():
-        if LEGACY.exists():
-            return FileResponse(LEGACY)
         return {"message": "SchemaRover API. Run `npm run build` in ui/ to serve the frontend."}
