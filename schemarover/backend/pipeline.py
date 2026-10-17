@@ -201,11 +201,39 @@ def _client(api_key: str):
     global _CLIENT
     if _CLIENT is None:
         from google import genai
-        _CLIENT = genai.Client(api_key=api_key)
+        from google.genai import types
+        # SDK-native retry with backoff on 408/429/5xx — covers the
+        # "overloaded" crashes without hand-rolled sleep loops.
+        _CLIENT = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(
+                timeout=30_000,
+                retry_options=types.HttpRetryOptions(attempts=3),
+            ),
+        )
     return _CLIENT
 
 
-def generate_sql(prompt: str, api_key: str, model: str = "gemini-3.6-flash") -> str:
+PRIMARY_MODEL = "gemini-3.6-flash"
+
+
+def generate_sql(prompt: str, api_key: str) -> str:
+    """Primary model first; if it still fails after the SDK's retries, walk
+    GEMINI_FALLBACK_MODELS (comma-separated env var). The paper's numbers
+    don't touch this path — eval_harness never calls the LLM."""
+    import os
+    fallbacks = [m.strip() for m in os.environ.get("GEMINI_FALLBACK_MODELS", "").split(",") if m.strip()]
+    err = None
+    for model in [PRIMARY_MODEL, *fallbacks]:
+        try:
+            return _generate(prompt, api_key, model, low_thinking=(model == PRIMARY_MODEL))
+        except Exception as e:
+            print(f"[warn] {model} failed: {e}")
+            err = e
+    raise err
+
+
+def _generate(prompt: str, api_key: str, model: str, low_thinking: bool) -> str:
     """Gemini Flash at temperature 0 for deterministic, reproducible output
     (required so the paper's numbers are reproducible).
 
@@ -234,7 +262,8 @@ def generate_sql(prompt: str, api_key: str, model: str = "gemini-3.6-flash") -> 
             # 1024 is ample now that thinking is capped; the old 4096 existed
             # only because thinking was eating the budget before the SQL.
             max_output_tokens=1024,
-            thinking_config=types.ThinkingConfig(thinking_level="low"),
+            # thinking_level is 3.x-only; fallbacks (e.g. 2.5) use their default
+            thinking_config=types.ThinkingConfig(thinking_level="low") if low_thinking else None,
         ),
     )
     return (resp.text or "").strip()
@@ -302,3 +331,36 @@ def answer_question(
 
     result["elapsed_ms"] = int((time.time() - t0) * 1000)
     return result
+
+
+def _self_check():
+    """Fallback order: primary fails -> next model answers; all fail -> raise."""
+    import os
+    global _generate
+    real, calls = _generate, []
+
+    def fake(prompt, api_key, model, low_thinking):
+        calls.append((model, low_thinking))
+        if model == PRIMARY_MODEL:
+            raise RuntimeError("503 overloaded")
+        return "SELECT 1"
+
+    os.environ["GEMINI_FALLBACK_MODELS"] = "fb-a, fb-b"
+    _generate = fake
+    try:
+        assert generate_sql("q", "k") == "SELECT 1"
+        assert calls == [(PRIMARY_MODEL, True), ("fb-a", False)], calls
+
+        _generate = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down"))
+        try:
+            generate_sql("q", "k")
+            raise AssertionError("expected raise when every model fails")
+        except RuntimeError as e:
+            assert str(e) == "down"
+    finally:
+        _generate = real
+    print("pipeline self-check OK")
+
+
+if __name__ == "__main__":
+    _self_check()
