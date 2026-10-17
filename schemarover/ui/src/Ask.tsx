@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight, Code2, Copy, Check, X } from "lucide-react";
-import { ask, humanError, type QueryResult } from "./api";
+import { Link } from "react-router-dom";
+import { ArrowRight, Code2, Copy, Check, Download, History as HistoryIcon, X } from "lucide-react";
+import {
+  ask,
+  downloadCsv,
+  history,
+  historyEntry,
+  humanError,
+  type HistoryRow,
+  type QueryResult,
+} from "./api";
 import ThemeToggle from "./ThemeToggle";
 
 const EXAMPLES = [
@@ -21,10 +30,30 @@ export default function Ask() {
   const [result, setResult] = useState<QueryResult | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const historyRef = useRef<HTMLDialogElement>(null);
+  const [past, setPast] = useState<HistoryRow[]>([]);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  function openHistory() {
+    history().then(setPast).catch(() => setPast([]));
+    historyRef.current?.showModal();
+  }
+
+  /** Reopen a saved answer — served from history, no LLM call, no DB query. */
+  async function reopen(id: number) {
+    historyRef.current?.close();
+    setFailure(null);
+    try {
+      const r = await historyEntry(id);
+      setQuestion(r.question);
+      setResult(r);
+    } catch (e) {
+      setFailure(e instanceof Error ? e.message : "Couldn't open that result.");
+    }
+  }
 
   async function submit(q: string) {
     const trimmed = q.trim();
@@ -51,8 +80,58 @@ export default function Ask() {
         <span className="font-display text-[15px] font-semibold tracking-tight">
           Schema<span className="text-signal">Rover</span>
         </span>
-        <ThemeToggle />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={openHistory}
+            className="flex items-center gap-1.5 text-xs text-slate transition hover:text-signal"
+          >
+            <HistoryIcon size={13} /> History
+          </button>
+          <Link to="/admin" className="text-xs text-slate transition hover:text-signal">
+            Databases
+          </Link>
+          <ThemeToggle />
+        </div>
       </header>
+
+      <dialog
+        ref={historyRef}
+        onClick={(e) => e.target === historyRef.current && historyRef.current.close()}
+        className="m-auto w-[min(40rem,92vw)] max-h-[80dvh] rounded bg-card p-0 text-ink"
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-rule">
+          <h2 className="font-display font-semibold text-sm">Your past questions</h2>
+          <button
+            onClick={() => historyRef.current?.close()}
+            aria-label="Close"
+            className="p-1.5 rounded text-slate transition hover:text-ink hover:bg-paper"
+          >
+            <X size={15} />
+          </button>
+        </div>
+        {past.length === 0 ? (
+          <p className="px-5 py-6 text-sm text-hush">Nothing yet — ask a question first.</p>
+        ) : (
+          <ul className="divide-y divide-rule">
+            {past.map((h) => (
+              <li key={h.id}>
+                <button
+                  onClick={() => reopen(h.id)}
+                  disabled={!h.has_result}
+                  title={h.has_result ? "Open this result" : "Asked before results were saved"}
+                  className="w-full text-left px-5 py-3 transition hover:bg-paper disabled:opacity-40 disabled:hover:bg-transparent"
+                >
+                  <span className="block text-sm truncate">{h.question}</span>
+                  <span className="block font-mono text-[11px] text-hush mt-0.5">
+                    {h.ts.slice(0, 16)} · {h.database} ·{" "}
+                    {h.error ? <span className="text-alarm">error</span> : `${h.row_count} rows`}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </dialog>
 
       <main className="flex-1 w-full max-w-3xl mx-auto px-6 sm:px-10 pb-24">
         <motion.div
@@ -170,7 +249,7 @@ function ErrorCard({ raw }: { raw: string }) {
 function Results({ result }: { result: QueryResult }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [copied, setCopied] = useState(false);
-  const { columns, rows, sql, elapsed_ms } = result;
+  const { columns, rows, sql, elapsed_ms, ts } = result;
 
   async function copy() {
     await navigator.clipboard.writeText(sql ?? "");
@@ -189,8 +268,19 @@ function Results({ result }: { result: QueryResult }) {
       <div className="flex items-center justify-between gap-4 mb-3">
         <p className="font-mono text-xs text-slate">
           {rows.length} {rows.length === 1 ? "row" : "rows"}
-          <span className="text-hush"> · {(elapsed_ms / 1000).toFixed(1)}s</span>
+          <span className="text-hush">
+            {ts ? ` · saved ${ts.slice(0, 16)}` : ` · ${(elapsed_ms / 1000).toFixed(1)}s`}
+          </span>
         </p>
+        <div className="flex items-center gap-2">
+        {rows.length > 0 && (
+          <button
+            onClick={() => downloadCsv("schemarover-result.csv", columns, rows)}
+            className="flex items-center gap-1.5 text-xs text-slate border border-rule rounded-full px-3 py-1.5 bg-card transition hover:border-signal hover:text-signal"
+          >
+            <Download size={13} /> Export CSV
+          </button>
+        )}
         {sql && (
           <button
             onClick={() => dialogRef.current?.showModal()}
@@ -199,6 +289,7 @@ function Results({ result }: { result: QueryResult }) {
             <Code2 size={13} /> View SQL
           </button>
         )}
+        </div>
       </div>
 
       {rows.length === 0 ? (

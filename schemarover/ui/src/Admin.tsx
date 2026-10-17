@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Link } from "react-router-dom";
-import { Plug, Search, ExternalLink, AlertTriangle } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Plug, Search, ExternalLink, LogOut, Trash2 } from "lucide-react";
 import {
   ask,
   connect,
-  getToken,
-  health,
+  forgetSaved,
   history,
-  setToken,
+  logout,
+  me,
+  openSaved,
+  savedConnections,
   type Connection,
   type HistoryRow,
   type QueryResult,
+  type SavedConnection,
 } from "./api";
 import ThemeToggle from "./ThemeToggle";
 
@@ -32,7 +35,9 @@ const STAGE_LABEL: Record<Exclude<Stage, "none">, string> = {
 };
 
 export default function Admin() {
-  const [token, setTokenState] = useState(getToken());
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [saved, setSaved] = useState<SavedConnection[]>([]);
   const [dbUrl, setDbUrl] = useState("");
   const [conn, setConn] = useState<Connection | null>(null);
   const [connError, setConnError] = useState<string | null>(null);
@@ -46,25 +51,44 @@ export default function Admin() {
   const [rows, setRows] = useState<HistoryRow[]>([]);
 
   const loadHistory = () => history().then(setRows).catch(() => setRows([]));
+  const loadSaved = () => savedConnections().then(setSaved).catch(() => setSaved([]));
 
   useEffect(() => {
-    health().catch(() => {});
+    me()
+      .then((m) => {
+        setEmail(m.email);
+        setConn(m.connection);
+      })
+      .catch(() => {});
+    loadSaved();
     loadHistory();
   }, []);
 
-  async function doConnect(e: React.FormEvent) {
-    e.preventDefault();
+  /** Shared by "connect a new URL" and "click a saved one". */
+  async function open(run: () => Promise<Connection>) {
     setConnecting(true);
     setConnError(null);
     try {
-      setConn(await connect(dbUrl));
+      setConn(await run());
       setResult(null);
+      setDbUrl("");
+      loadSaved();
     } catch (err) {
       setConnError(err instanceof Error ? err.message : "Connection failed.");
       setConn(null);
     } finally {
       setConnecting(false);
     }
+  }
+
+  async function forget(id: number) {
+    await forgetSaved(id).catch(() => {});
+    loadSaved();
+  }
+
+  async function doLogout() {
+    await logout();
+    navigate("/login", { replace: true });
   }
 
   async function doProbe(e: React.FormEvent) {
@@ -137,39 +161,59 @@ export default function Admin() {
               User app <ExternalLink size={12} />
             </Link>
             <ThemeToggle />
+            <span className="font-mono text-xs text-hush hidden sm:inline">{email}</span>
+            <button
+              onClick={doLogout}
+              aria-label="Log out"
+              title="Log out"
+              className="size-8 grid place-items-center rounded-full text-slate transition hover:text-signal hover:bg-paper"
+            >
+              <LogOut size={15} />
+            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        {/* --- admin token --- */}
-        <Panel title="Access" note="Sent as X-Admin-Token on privileged calls.">
-          <div className="flex items-center gap-3">
-            <input
-              type="password"
-              value={token}
-              onChange={(e) => {
-                setTokenState(e.target.value);
-                setToken(e.target.value);
-              }}
-              placeholder="Admin token"
-              aria-label="Admin token"
-              className="flex-1 font-mono text-sm bg-paper border border-rule rounded px-3 py-2 outline-none focus:border-signal"
-            />
-            {!token && (
-              <span className="flex items-center gap-1.5 text-xs text-beacon shrink-0">
-                <AlertTriangle size={13} /> required to connect
-              </span>
-            )}
-          </div>
-        </Panel>
-
         {/* --- connection --- */}
         <Panel
           title="Database connection"
-          note="Kept off the user app on purpose — end users never see a connection string."
+          note="Connections you open are saved to your account, encrypted. Passwords are never shown again."
         >
-          <form onSubmit={doConnect} className="flex flex-col sm:flex-row gap-3">
+          {saved.length > 0 && (
+            <ul className="mb-4 divide-y divide-rule border border-rule rounded">
+              {saved.map((s) => (
+                <li key={s.id} className="flex items-center gap-3 px-3 py-2">
+                  <button
+                    onClick={() => open(() => openSaved(s.id))}
+                    disabled={connecting}
+                    className="flex-1 min-w-0 text-left transition hover:text-signal disabled:opacity-30"
+                  >
+                    <span className="text-sm font-medium">{s.name}</span>
+                    <span className="block font-mono text-[11px] text-hush truncate">{s.safe_url}</span>
+                  </button>
+                  {conn?.safe_url === s.safe_url && (
+                    <span className="font-mono text-[10px] uppercase tracking-wider text-signal">active</span>
+                  )}
+                  <button
+                    onClick={() => forget(s.id)}
+                    aria-label={`Forget ${s.name}`}
+                    title="Forget this connection"
+                    className="p-1.5 rounded text-hush transition hover:text-alarm hover:bg-paper"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              open(() => connect(dbUrl));
+            }}
+            className="flex flex-col sm:flex-row gap-3"
+          >
             <input
               value={dbUrl}
               onChange={(e) => setDbUrl(e.target.value)}
